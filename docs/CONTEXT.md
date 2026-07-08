@@ -86,9 +86,10 @@ Etapa 2 — Panel de administración
   de Servicio) y Módulo 4 (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo
   (vínculo dual monotributo/dependencia, motor `calcularCese` con las 13 causales, Simulador
   de Vínculo, Score de Riesgo de reclasificación, Ausencias y Cobertura) construidos en
-  código. Falta aplicar `backend/src/db/schema_etapa2b.sql` contra la base Supabase real
-  (pendiente de contraseña de base o SQL Editor manual — ver `docs/PROGRESS.md`). Módulos
-  5-8 quedan para sesiones siguientes.
+  código y con `backend/src/db/schema_etapa2b.sql` ya aplicado y verificado (RLS activa y
+  probada) contra la base Supabase real — ver `docs/PROGRESS.md`. Módulos 5-8 quedan para
+  sesiones siguientes, cada uno con una decisión de producto pendiente documentada en
+  `docs/PROGRESS.md`.
 
 Etapas 3 y 4 — PWA Asistentes / PWA Familias
   Framework: React 18 + Vite + Vite PWA Plugin

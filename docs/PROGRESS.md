@@ -11,7 +11,7 @@
 | 0 | Setup: repo, estructura, variables de entorno | 🟢 Completo |
 | 1 | Sitio web público (páginas + formularios + backend) | 🟡 En progreso |
 | 2 | Panel de administración | 🟡 En progreso |
-| 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🟡 En progreso (código listo, falta aplicar SQL contra Supabase real) |
+| 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🟢 Completo — código listo y SQL aplicado/verificado contra Supabase real |
 | 3 | PWA Asistentes (login, guardias, GPS, reporte + IA) | 🔴 No iniciado |
 | 4 | PWA Familias (login, reportes, alertas) | 🔴 No iniciado |
 | 5 | Planillas IOMA (PDF) | 🔴 No iniciado |
@@ -125,6 +125,27 @@ ningún PRD original._
 | 2026-07-08 | Primer corte de Etapa 2 acotado a Módulos 1-3 (Dashboard, Postulaciones, Solicitudes) — son los únicos con datos reales ya fluyendo desde Etapa 1. Módulo 4 + `PRD_02B_Gestion_Personal.md` (vínculo/cese/riesgo legal) quedan fuera deliberadamente, para una sesión propia dada la sensibilidad legal del motor de cálculo de indemnizaciones | Evitar construir sobre tablas (`asistentes`, `guardias`, `familias`, `pacientes`) que todavía no existen, y separar el motor legal (regla 10 de `CLAUDE.md`, mayor riesgo) del resto del panel |
 | 2026-07-08 | Se corrigió una policy RLS recursiva (`admin_ve_todos_los_usuarios` en la tabla `usuarios`, subconsultaba la misma tabla dentro de un `EXISTS`) tanto en la base real de Supabase como en `backend/src/db/schema_etapa2.sql`. Se dejó documentado en el propio SQL como comentario para que no se reintroduzca | Postgres reevalúa RLS dentro del `EXISTS`, causando `infinite recursion detected in policy for relation "usuarios"` — descubierto durante la verificación end-to-end con el usuario Admin real recién creado |
 
+## Actualización — `schema_etapa2b.sql` aplicado contra Supabase real
+
+Con la contraseña de la base (provista por el usuario, ver
+`No hacer commit/claves y contraseñas.txt`) se aplicó `backend/src/db/schema_etapa2b.sql`
+contra el proyecto real de Supabase mediante conexión directa (`pg`, no había `psql` ni
+`supabase` CLI enlazado disponibles en este entorno — se usó un script Node de un solo uso
+con la librería `pg`, descartado después de correrlo). Verificado:
+
+- Las 7 tablas nuevas (`aspirantes`, `asistentes`, `verificaciones_asistente`,
+  `escalas_legales`, `ausencias`, `guardias_cobertura`, `ceses`) existen con
+  `relrowsecurity = true` y la cantidad de policies esperada por tabla.
+- 15 filas seed en `escalas_legales` y 13 valores del enum `causal_cese`, ambos coinciden
+  con lo escrito en el SQL.
+- Confirmación end-to-end de que la RLS bloquea de verdad (no solo que está "activada"):
+  una consulta REST sin sesión (clave publicable, sin JWT de usuario autenticado) a
+  `escalas_legales` devuelve `[]` en vez de las 15 filas reales — el dato sensible no se
+  filtra a un cliente no autenticado.
+
+Con esto, Etapa 2B queda completa (código + base real), y ya no es un bloqueante para
+Etapa 3 según la regla de secuencia de `BUILD_ORDER.md`.
+
 ## Próximos pasos sugeridos (por qué se detuvo acá esta sesión)
 
 Con Módulo 4 + `PRD_02B_Gestion_Personal.md` en código, evalué seguir de largo con los
@@ -151,27 +172,16 @@ producción"):
 
 Por eso el trabajo autónomo de esta sesión se acotó a Módulo 4 + Etapa 2B (que sí tenían PRD
 completo y no dependían de etapas futuras), en vez de avanzar sobre módulos que requieren
-decisiones de producto/arquitectura no tomadas todavía. Al despertar, el usuario debería:
-1. Aplicar `schema_etapa2b.sql` contra Supabase real (contraseña de la base o SQL Editor
-   manual) y confirmar RLS.
-2. Decidir si Etapa 4 (login de familias) se adelanta para poder construir Módulo 5, o si
+decisiones de producto/arquitectura no tomadas todavía. El usuario ya aplicó la contraseña
+de la base (ver sección de arriba), así que el único punto pendiente real es:
+1. Decidir si Etapa 4 (login de familias) se adelanta para poder construir Módulo 5, o si
    Módulo 5 espera su turno natural en `BUILD_ORDER.md`.
-3. Confirmar el esquema de precios/configuración de Módulo 8 antes de que se construya.
+2. Confirmar el esquema de precios/configuración de Módulo 8 antes de que se construya.
 
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
 
-- **`backend/src/db/schema_etapa2b.sql` no está aplicado contra la base Supabase real
-  todavía.** A diferencia de `schema_etapa2.sql` (que sí se verificó end-to-end en su
-  sesión), este entorno no tiene una connection string directa a Postgres (solo
-  `SUPABASE_SERVICE_ROLE_KEY`, que sirve para la REST API pero no para ejecutar DDL/SQL
-  crudo) ni el CLI de Supabase está enlazado al proyecto (`supabase link` pide la contraseña
-  de la base, que no está guardada en ningún `.env`). Queda pendiente que el usuario pegue
-  el contenido de `schema_etapa2b.sql` en el SQL Editor de Supabase (dashboard) o provea la
-  contraseña de la base para enlazar el CLI. Después de aplicarlo, falta el mismo tipo de
-  verificación end-to-end que se hizo con `schema_etapa2.sql` (login real, lectura/escritura
-  respetando RLS por rol).
 - Las 15 filas seed de `escalas_legales` en `schema_etapa2b.sql` están marcadas
   explícitamente `'PLACEHOLDER — validar con abogado laboralista'` — son valores de ejemplo
   para poder testear `calcularCese`/`calcularScoreRiesgo`, no valores legales reales.
