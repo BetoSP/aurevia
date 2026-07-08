@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { esAdminOSuperior } from '../../lib/roles';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
@@ -9,7 +10,7 @@ import { Alert } from '../../components/ui/Alert';
 export function PerfilTab({ asistente, onActualizado }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
-  const esAdmin = usuario?.rol === 'admin';
+  const esAdmin = esAdminOSuperior(usuario?.rol);
   const [form, setForm] = useState({
     especialidades: (asistente.especialidades || []).join(', '),
     zonas: (asistente.zonas || []).join(', '),

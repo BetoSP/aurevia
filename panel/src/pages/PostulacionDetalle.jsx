@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
+import { esAdminOSuperior } from '../lib/roles';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
@@ -134,7 +135,7 @@ export function PostulacionDetalle({ postulacion, onClose, onActualizada }) {
           onChange={(e) => setNota(e.target.value)}
         />
 
-        {usuario?.rol === 'admin' && postulacion.estado === 'aprobado' && (
+        {esAdminOSuperior(usuario?.rol) && postulacion.estado === 'aprobado' && (
           postulacion.asistente_id ? (
             <p className="panel-explicacion">{t.postulaciones.ya_iniciada_verificacion}</p>
           ) : (

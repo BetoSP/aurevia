@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { esAdminOSuperior } from '../../lib/roles';
 import { supabase } from '../../lib/supabaseClient';
 import { PerfilTab } from './PerfilTab';
 import { VerificacionTab } from './VerificacionTab';
@@ -43,7 +44,7 @@ export function AsistenteDetalle() {
   if (estado === 'cargando') return <p className="estado-cargando">{t.comun.cargando}</p>;
   if (estado === 'error') return <p className="estado-vacio">{error || t.comun.error_generico}</p>;
 
-  const esAdmin = usuario?.rol === 'admin';
+  const esAdmin = esAdminOSuperior(usuario?.rol);
 
   return (
     <div>

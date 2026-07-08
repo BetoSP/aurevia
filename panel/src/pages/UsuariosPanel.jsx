@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
@@ -25,6 +26,8 @@ async function llamarApi(path, opciones = {}) {
 
 export function UsuariosPanel() {
   const { t } = useLocale();
+  const { usuario } = useAuth();
+  const esSuperadmin = usuario?.rol === 'superadmin';
   const [usuarios, setUsuarios] = useState([]);
   const [estado, setEstado] = useState('cargando');
   const [error, setError] = useState(null);
@@ -48,13 +51,17 @@ export function UsuariosPanel() {
     recargar();
   }, [recargar]);
 
+  const puedeEditar = (fila) => esSuperadmin || fila.rol === 'coordinador';
+
   return (
     <div>
       <h1>{t.usuarios_panel.titulo}</h1>
       <p className="panel-explicacion">{t.usuarios_panel.explicacion}</p>
 
       <div className="panel-filtros">
-        <Button onClick={() => setCreandoNuevo(true)}>{t.usuarios_panel.nuevo_coordinador}</Button>
+        <Button onClick={() => setCreandoNuevo(true)}>
+          {esSuperadmin ? t.usuarios_panel.nuevo_usuario : t.usuarios_panel.nuevo_coordinador}
+        </Button>
       </div>
 
       <EstadoLista estado={estado} error={error} vacio={estado === 'listo' && usuarios.length === 0} recargar={recargar}>
@@ -76,7 +83,7 @@ export function UsuariosPanel() {
                 <td>{u.telefono || '—'}</td>
                 <td>{(u.zonas || []).join(', ') || '—'}</td>
                 <td>
-                  {u.rol === 'coordinador' && (
+                  {puedeEditar(u) && (
                     <button onClick={() => setEditando(u)}>{t.comun.editar}</button>
                   )}
                 </td>
@@ -87,7 +94,8 @@ export function UsuariosPanel() {
       </EstadoLista>
 
       {creandoNuevo && (
-        <NuevoCoordinador
+        <NuevoUsuarioPanel
+          esSuperadmin={esSuperadmin}
           onClose={() => setCreandoNuevo(false)}
           onCreado={() => {
             setCreandoNuevo(false);
@@ -97,7 +105,7 @@ export function UsuariosPanel() {
       )}
 
       {editando && (
-        <EditarCoordinador
+        <EditarUsuarioPanel
           usuario={editando}
           onClose={() => setEditando(null)}
           onActualizado={() => {
@@ -110,12 +118,13 @@ export function UsuariosPanel() {
   );
 }
 
-function NuevoCoordinador({ onClose, onCreado }) {
+function NuevoUsuarioPanel({ esSuperadmin, onClose, onCreado }) {
   const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [zonas, setZonas] = useState('');
+  const [rol, setRol] = useState('coordinador');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
 
@@ -129,6 +138,7 @@ function NuevoCoordinador({ onClose, onCreado }) {
           email,
           nombre,
           telefono,
+          rol: esSuperadmin ? rol : 'coordinador',
           zonas: zonas.split(',').map((z) => z.trim()).filter(Boolean),
         }),
       });
@@ -143,10 +153,17 @@ function NuevoCoordinador({ onClose, onCreado }) {
   return (
     <div className="panel-modal-fondo" onClick={onClose}>
       <div className="panel-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>{t.usuarios_panel.nuevo_coordinador}</h2>
+        <h2>{esSuperadmin ? t.usuarios_panel.nuevo_usuario : t.usuarios_panel.nuevo_coordinador}</h2>
         {error && <Alert variant="error">{error}</Alert>}
         <FormField label={t.usuarios_panel.col_nombre} name="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
         <FormField label="Email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        {esSuperadmin && (
+          <FormField label={t.usuarios_panel.campo_rol} name="rol" type="select" value={rol} onChange={(e) => setRol(e.target.value)}>
+            <option value="coordinador">{t.usuarios_panel.rol_coordinador}</option>
+            <option value="admin">{t.usuarios_panel.rol_admin}</option>
+            <option value="superadmin">{t.usuarios_panel.rol_superadmin}</option>
+          </FormField>
+        )}
         <FormField label={t.usuarios_panel.col_telefono} name="telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
         <FormField label={t.usuarios_panel.col_zonas} name="zonas" value={zonas} onChange={(e) => setZonas(e.target.value)} placeholder={t.usuarios_panel.zonas_placeholder} />
         <p className="panel-explicacion">{t.usuarios_panel.aviso_password_temporal}</p>
@@ -161,7 +178,7 @@ function NuevoCoordinador({ onClose, onCreado }) {
   );
 }
 
-function EditarCoordinador({ usuario, onClose, onActualizado }) {
+function EditarUsuarioPanel({ usuario, onClose, onActualizado }) {
   const { t } = useLocale();
   const [nombre, setNombre] = useState(usuario.nombre);
   const [telefono, setTelefono] = useState(usuario.telefono || '');

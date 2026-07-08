@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
+import { esAdminOSuperior } from '../lib/roles';
 import { useSupabaseTable } from '../hooks/useSupabaseTable';
 import { EstadoLista } from '../components/layout/EstadoLista';
 import { Button } from '../components/ui/Button';
@@ -14,7 +15,7 @@ export function ListaPrecios() {
   const [seleccionado, setSeleccionado] = useState(null);
   const [creandoNuevo, setCreandoNuevo] = useState(false);
 
-  const esAdmin = usuario?.rol === 'admin';
+  const esAdmin = esAdminOSuperior(usuario?.rol);
 
   const filasFiltradas = useMemo(() => {
     return filas.filter((p) => {

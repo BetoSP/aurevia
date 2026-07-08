@@ -10,7 +10,7 @@ export function ProtectedRoute({ children }) {
     return <div className="pantalla-cargando">{t.comun.cargando}</div>;
   }
 
-  if (!session || !usuario || !['admin', 'coordinador'].includes(usuario.rol)) {
+  if (!session || !usuario || !['admin', 'coordinador', 'superadmin'].includes(usuario.rol)) {
     return <Navigate to="/login" replace />;
   }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
+import { esAdminOSuperior } from '../lib/roles';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
@@ -117,7 +118,7 @@ export function SolicitudDetalle({ solicitud, onClose, onActualizada }) {
           onChange={(e) => setNota(e.target.value)}
         />
 
-        {usuario?.rol === 'admin' && (
+        {esAdminOSuperior(usuario?.rol) && (
           <div className="panel-resultado-calculo">
             {solicitud.familia_id ? (
               <p>{t.solicitudes.ya_convertida_familia}</p>

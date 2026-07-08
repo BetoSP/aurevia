@@ -19,7 +19,7 @@ export async function requiereRolPanel(req, res, next) {
     .eq('id', userData.user.id)
     .single();
 
-  if (errorPerfil || !perfil || !['admin', 'coordinador'].includes(perfil.rol)) {
+  if (errorPerfil || !perfil || !['admin', 'coordinador', 'superadmin'].includes(perfil.rol)) {
     return res.status(403).json({ error: 'Rol sin permiso' });
   }
 
