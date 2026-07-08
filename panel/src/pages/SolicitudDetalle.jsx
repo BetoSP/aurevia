@@ -1,18 +1,52 @@
 import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
 import { Alert } from '../components/ui/Alert';
 
 const ESTADOS = ['nueva', 'en_gestion', 'asignada', 'cancelada', 'completada'];
+const API_URL = import.meta.env.VITE_API_URL;
 
 export function SolicitudDetalle({ solicitud, onClose, onActualizada }) {
   const { t } = useLocale();
+  const { usuario } = useAuth();
   const [nuevoEstado, setNuevoEstado] = useState(solicitud.estado || 'nueva');
   const [nota, setNota] = useState(solicitud.nota_interna || '');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
+  const [convirtiendo, setConvirtiendo] = useState(false);
+  const [errorConversion, setErrorConversion] = useState(null);
+
+  async function handleConvertirEnFamilia() {
+    const confirmado = window.confirm(t.solicitudes.confirmar_convertir_familia);
+    if (!confirmado) return;
+
+    setConvirtiendo(true);
+    setErrorConversion(null);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/cuentas/familia`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session?.access_token}`,
+        },
+        body: JSON.stringify({ solicitudId: solicitud.id }),
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(resultado.error || t.comun.error_generico);
+      }
+      onActualizada();
+    } catch (err) {
+      setErrorConversion(err.message);
+    } finally {
+      setConvirtiendo(false);
+    }
+  }
 
   async function handleGuardar() {
     if (nuevoEstado !== (solicitud.estado || 'nueva') && nuevoEstado === 'cancelada') {
@@ -82,6 +116,22 @@ export function SolicitudDetalle({ solicitud, onClose, onActualizada }) {
           value={nota}
           onChange={(e) => setNota(e.target.value)}
         />
+
+        {usuario?.rol === 'admin' && (
+          <div className="panel-resultado-calculo">
+            {solicitud.familia_id ? (
+              <p>{t.solicitudes.ya_convertida_familia}</p>
+            ) : (
+              <>
+                <p>{t.solicitudes.convertir_en_familia_explicacion}</p>
+                {errorConversion && <Alert variant="error">{errorConversion}</Alert>}
+                <Button variant="secondary" onClick={handleConvertirEnFamilia} disabled={convirtiendo}>
+                  {convirtiendo ? t.comun.guardando : t.solicitudes.convertir_en_familia}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="panel-modal-acciones">
           <Button variant="secondary" onClick={onClose} disabled={guardando}>

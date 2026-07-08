@@ -125,6 +125,52 @@ ningún PRD original._
 | 2026-07-08 | Primer corte de Etapa 2 acotado a Módulos 1-3 (Dashboard, Postulaciones, Solicitudes) — son los únicos con datos reales ya fluyendo desde Etapa 1. Módulo 4 + `PRD_02B_Gestion_Personal.md` (vínculo/cese/riesgo legal) quedan fuera deliberadamente, para una sesión propia dada la sensibilidad legal del motor de cálculo de indemnizaciones | Evitar construir sobre tablas (`asistentes`, `guardias`, `familias`, `pacientes`) que todavía no existen, y separar el motor legal (regla 10 de `CLAUDE.md`, mayor riesgo) del resto del panel |
 | 2026-07-08 | Se corrigió una policy RLS recursiva (`admin_ve_todos_los_usuarios` en la tabla `usuarios`, subconsultaba la misma tabla dentro de un `EXISTS`) tanto en la base real de Supabase como en `backend/src/db/schema_etapa2.sql`. Se dejó documentado en el propio SQL como comentario para que no se reintroduzca | Postgres reevalúa RLS dentro del `EXISTS`, causando `infinite recursion detected in policy for relation "usuarios"` — descubierto durante la verificación end-to-end con el usuario Admin real recién creado |
 
+## Actualización — Mecanismo de creación de cuentas + inicio de Módulo 5 (Familias)
+
+Tras resolver las dos decisiones pendientes ("vayamos por una a la vez"): usuario eligió
+avanzar primero con Login de Familias (Módulo 5), y confirmó construir primero un mecanismo
+compartido de creación de cuentas (reutilizable para Asistentes más adelante) en vez de una
+solución puntual solo para Familias, sin enviar todavía invitación por email (Etapa 3/4 — las
+PWA donde se loguearían — no existen aún).
+
+Se detectó y resolvió un gap arquitectónico no documentado: ni `asistentes` ni `familias`
+pueden poblarse hoy porque ambas tablas exigen `id REFERENCES usuarios(id)` (una cuenta real
+de Supabase Auth), y no existía ninguna UI que creara esa cuenta — afectaba tanto al Módulo 4
+ya construido como al Módulo 5 pedido ahora.
+
+Construido:
+
+- `backend/src/db/schema_etapa2c.sql` (nuevo, **aplicado y verificado contra Supabase real**):
+  tablas `familias` (`id REFERENCES usuarios(id)`, RLS: panel Admin/Coordinador gestiona todo
+  + policy `familia_ve_su_propia_fila` ya lista para cuando exista la Etapa 4) y `pacientes`
+  (datos de salud, RLS solo Admin/Coordinador por regla 7/8 de `CLAUDE.md`), y columna
+  `solicitudes.familia_id`.
+- `backend/src/utils/cuentasPanel.js`: `crearCuentaConPerfil({ email, nombre, telefono, rol })`
+  mecanismo compartido (Asistentes/Familias) que crea la cuenta de Supabase Auth vía
+  `admin.createUser` (nunca dispara email por sí solo) + la fila en `usuarios`; `borrarCuenta`
+  para rollback.
+- `backend/src/routes/panelCuentas.js`: `POST /api/panel/cuentas/familia`, restringido a rol
+  Admin (más estricto que el resto del panel, que también admite Coordinador, por ser una
+  operación de alto impacto y difícil de revertir). Convierte una `solicitud` en `familia` +
+  `paciente` real, con rollback compensatorio manual (borra paciente → familia → cuenta) si
+  falla cualquier paso posterior a la creación de la cuenta.
+- `panel/src/pages/SolicitudDetalle.jsx`: botón "Convertir en Familia" (solo visible para
+  Admin, con confirmación explícita — regla 4 — y deshabilitado mientras se ejecuta — regla 5).
+- i18n de las 4 claves nuevas agregado simultáneamente en es-AR/en/pt-BR (regla 2).
+
+Verificado: `schema_etapa2c.sql` aplicado contra Supabase real (RLS activa en ambas tablas
+nuevas, columna `familia_id` agregada); `npm run build` y `npx vitest run` de `panel/` sin
+errores (18/18 tests); `/api/panel/cuentas/familia` monta correctamente en el backend real
+corriendo (responde 401 sin token, no 404).
+
+Pendiente explícitamente fuera de este corte: la pantalla propia de Módulo 5 (lista de
+familias activas con contacto/pacientes/guardias/historial — spec completa en
+`PRD_02_Panel_Admin.md`) — lo construido hasta acá es solo el mecanismo de conversión
+solicitud→familia, no el módulo de gestión en sí. El lado Asistente del mismo mecanismo
+("convertir aspirante en Asistente") también queda deliberadamente afuera: requiere primero
+una UI para el pipeline de Filtro prestadora-original (`aspirantes`/`verificaciones_asistente`), que no
+existe todavía.
+
 ## Actualización — `schema_etapa2b.sql` aplicado contra Supabase real
 
 Con la contraseña de la base (provista por el usuario, ver
@@ -197,6 +243,7 @@ _Una entrada por sesión de trabajo, más reciente primero._
 
 | Fecha | Sesión | Archivos |
 |---|---|---|
+| 2026-07-08 | Mecanismo de creación de cuentas (compartido) + inicio Módulo 5 (Familias) | `backend/src/db/schema_etapa2c.sql` (nuevo, aplicado y verificado); `backend/src/utils/cuentasPanel.js` (nuevo); `backend/src/routes/panelCuentas.js` (nuevo); `backend/src/server.js` (ruta montada); `panel/src/pages/SolicitudDetalle.jsx` (botón "Convertir en Familia"); `panel/src/i18n/translations.js` (4 claves nuevas en es-AR/en/pt-BR) |
 | 2026-07-08 | Módulo 4 del Panel (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo | `backend/src/db/schema_etapa2b.sql` (nuevo, no aplicado aún); `panel/src/lib/{calcularCese,escalasLegales,scoreRiesgo}.js` (nuevos) + `panel/src/lib/__tests__/{calcularCese,scoreRiesgo}.test.js` (nuevos); `panel/src/hooks/useEscalasLegales.js` (nuevo); `panel/src/pages/Asistentes.jsx` (nuevo); `panel/src/pages/asistentes/{AsistenteDetalle,PerfilTab,VinculoCeseTab,SimuladorVinculoTab,ScoreRiesgoTab,AusenciasCoberturaTab}.jsx` (nuevos); `panel/src/App.jsx` (rutas `/asistentes` y `/asistentes/:id`); `panel/src/components/layout/Layout.jsx` (link de nav); `panel/src/index.css` (clases nuevas del Módulo 4, solo variables existentes); `panel/src/i18n/translations.js` (claves `nav.asistentes` + bloque `asistentes` completo en es-AR/en/pt-BR); `panel/package.json` (agregado `vitest`) |
 | 2026-07-08 | Etapa 2: primer corte del Panel de Administración (Módulos 1-3) | `panel/` (app nueva completa: `package.json`, `index.html`, `src/{App,main,index.css}`, `src/styles/variables.css`, `src/components/ui/{Button,FormField,Alert}.jsx`, `src/lib/supabaseClient.js`, `src/i18n/{translations,LocaleContext}.jsx`, `src/context/AuthContext.jsx`, `src/hooks/useSupabaseTable.js`, `src/components/layout/{Layout,ProtectedRoute,EstadoLista}.jsx`, `src/pages/{Login,Dashboard,Postulaciones,PostulacionDetalle,Solicitudes,SolicitudDetalle}.jsx`, `.env.example`, `.gitignore`); `backend/src/db/schema_etapa2.sql` (nuevo), `backend/src/middleware/requiereRolPanel.js` (nuevo), `backend/src/routes/panelNotificaciones.js` (nuevo), `backend/src/utils/email.js` (agregado `enviarEmail`), `backend/src/server.js` (rutas del panel montadas) |
 | 2026-07-08 | Migración de Etapa 1 de Vite a Next.js 15 (App Router) | `sitio-web/package.json`, `sitio-web/next.config.mjs` (nuevos), `sitio-web/src/middleware.js`, `sitio-web/src/lib/i18n.js` (nuevos), `sitio-web/src/app/[locale]/{layout.jsx,page.jsx,servicios,el-filtro,solicita-servicio,trabaja-con-nosotros,contacto,privacidad,terminos}/*`, `sitio-web/src/app/manifest.js` (nuevos), `sitio-web/src/components/{Header,Footer,WhatsAppButton,LanguageSelector}.jsx` (reescritos como server/client components de Next.js), `sitio-web/src/hooks/useFormSubmit.js` (env var `NEXT_PUBLIC_API_URL`), `sitio-web/src/styles/global.css` (ajuste `#root`→`body`), `sitio-web/.env.example`, `sitio-web/.gitignore` (`.next`); eliminados: `sitio-web/index.html`, `sitio-web/vite.config.js`, `sitio-web/src/App.jsx`, `sitio-web/src/main.jsx`, `sitio-web/src/i18n/LocaleContext.jsx`, `sitio-web/src/pages/*` (8 archivos); actualizado `docs/CONTEXT.md` |
