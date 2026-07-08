@@ -82,10 +82,13 @@ Etapa 2 — Panel de administración
   Nota: el sitio público sigue en Express como capa de validación/envío de email, pero
   ambos (sitio y panel) leen/escriben la misma base Supabase.
 
-  Estado (2026-07-08): primer corte construido — Módulo 1 (Dashboard), Módulo 2
-  (Postulaciones), Módulo 3 (Solicitudes de Servicio). Módulo 4 (Plantel de Asistentes) y
-  `PRD_02B_Gestion_Personal.md` completo, y Módulos 5-8, quedan para sesiones siguientes
-  (ver `docs/PROGRESS.md`).
+  Estado (2026-07-08): Módulo 1 (Dashboard), Módulo 2 (Postulaciones), Módulo 3 (Solicitudes
+  de Servicio) y Módulo 4 (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo
+  (vínculo dual monotributo/dependencia, motor `calcularCese` con las 13 causales, Simulador
+  de Vínculo, Score de Riesgo de reclasificación, Ausencias y Cobertura) construidos en
+  código. Falta aplicar `backend/src/db/schema_etapa2b.sql` contra la base Supabase real
+  (pendiente de contraseña de base o SQL Editor manual — ver `docs/PROGRESS.md`). Módulos
+  5-8 quedan para sesiones siguientes.
 
 Etapas 3 y 4 — PWA Asistentes / PWA Familias
   Framework: React 18 + Vite + Vite PWA Plugin

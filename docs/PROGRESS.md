@@ -11,7 +11,7 @@
 | 0 | Setup: repo, estructura, variables de entorno | 🟢 Completo |
 | 1 | Sitio web público (páginas + formularios + backend) | 🟡 En progreso |
 | 2 | Panel de administración | 🟡 En progreso |
-| 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🔴 No iniciado |
+| 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🟡 En progreso (código listo, falta aplicar SQL contra Supabase real) |
 | 3 | PWA Asistentes (login, guardias, GPS, reporte + IA) | 🔴 No iniciado |
 | 4 | PWA Familias (login, reportes, alertas) | 🔴 No iniciado |
 | 5 | Planillas IOMA (PDF) | 🔴 No iniciado |
@@ -21,7 +21,35 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
-Etapa 2 iniciada: primer corte del Panel de Administración (`PRD_02_Panel_Admin.md`), scope
+Módulo 4 del Panel (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` construidos
+completos en código (trabajo nocturno autónomo, sin pausar a pedir permiso por instrucción
+explícita del usuario). Incluye:
+
+- `backend/src/db/schema_etapa2b.sql` (nuevo, **NO aplicado todavía contra Supabase real** —
+  ver deuda técnica abajo): tabla `asistentes` (no existía, con todas las columnas duales
+  monotributo/dependencia de PRD_02B), `aspirantes`, `verificaciones_asistente` (+ enum
+  `etapa_filtro`), `escalas_legales` (+ seed de 15 filas explícitamente marcadas
+  `'PLACEHOLDER — validar con abogado laboralista'`), `ausencias`, `guardias_cobertura`,
+  `ceses` (+ enum `causal_cese` con las 13 causales), con RLS en cada tabla (Admin ve todo;
+  Coordinador excluido de `escalas_legales`/`ceses` por `SECURITY.md`; Asistente/Familia sin
+  acceso, regla 8 de `CLAUDE.md`).
+- `panel/src/lib/calcularCese.js`: función pura con las 13 causales de PRD_02B, todo valor
+  legal resuelto desde `escalas_legales` vigente a la fecha del hecho (regla 10), nunca
+  hardcodeado. `panel/src/lib/scoreRiesgo.js`: score 0-100 con los 7 indicadores y pesos
+  también desde `escalas_legales`. Ambas con tests (`vitest`, 18/18 pasando) usando fixtures
+  fijas, según checklist explícito del PRD ("función pura y testeada").
+- UI Módulo 4: `Asistentes.jsx` (lista) + `AsistenteDetalle.jsx` con 5 tabs (Perfil,
+  Vínculo/Cese, Simulador de Vínculo, Score de Riesgo, Ausencias y Cobertura). Coordinador
+  solo ve la pestaña Perfil (el resto es admin-only, coincide con la exclusión de
+  `SECURITY.md`). La pestaña de Cese exige tildar "revisado por abogado" antes de confirmar
+  cuando `calcularCese` devuelve `requiereRevisionAbogado: true`; el Simulador reutiliza
+  `calcularCese` sin reimplementar la lógica (mandato explícito del PRD).
+- i18n: claves nuevas agregadas simultáneamente en es-AR/en/pt-BR (regla 2), CSS solo con
+  variables existentes del sistema (regla 6), botones deshabilitados durante guardado (regla
+  5), confirmación explícita antes de registrar un cese (regla 4).
+- `npm run build` del panel y `npx vitest run` verificados sin errores.
+
+Etapa 2 (Módulos 1-3) sigue como quedó documentado abajo: primer corte del Panel de Administración (`PRD_02_Panel_Admin.md`), scope
 acotado a lo que ya tiene datos reales de Etapa 1 — Módulo 1 (Dashboard), Módulo 2
 (Postulaciones) y Módulo 3 (Solicitudes de Servicio). Quedan deliberadamente afuera de este
 corte: Módulo 4 (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo (vínculo/
@@ -73,6 +101,9 @@ ningún PRD original._
 
 | Fecha | Decisión | Motivo |
 |---|---|---|
+| 2026-07-08 | Se agregó `vitest` como devDependency de `panel/` (no existía suite de tests en el panel hasta ahora) para poder testear `calcularCese`/`calcularScoreRiesgo` con fixtures fijas | El propio checklist de aceptación de `PRD_02B_Gestion_Personal.md` exige explícitamente que el motor de cálculo sea "función pura y testeada" dada su sensibilidad legal |
+| 2026-07-08 | En `calcularIndemnizacionAntiguedad` (dentro de `calcularCese.js`), el piso mínimo (mejor remuneración × meses piso) se aplica **antes** que el tope indemnizatorio, no después — un test detectó que aplicarlo al revés permitía que el piso empujara el monto por encima del tope legal | Bug encontrado durante el desarrollo de los tests unitarios; corregido antes de tocar la UI para que la pestaña de Cese nunca muestre un monto que viola el tope legal |
+| 2026-07-08 | La pestaña Vínculo y Cese, dentro del Módulo 4, y todo lo demás de `PRD_02B_Gestion_Personal.md` (Simulador, Score de Riesgo, Ausencias/Cobertura) quedan visibles solo para rol Admin — Coordinador solo ve la pestaña Perfil del Asistente | Coincide con la exclusión explícita de Coordinador de `escalas_legales`/`ceses`/datos laborales internos documentada en `SECURITY.md` |
 | 2026-07-07 | Se incorporaron 4 patrones de UI/arquitectura de un análisis externo (brief de GlamourOS, ERP para salones de belleza — proyecto ajeno a prestadora-original, solo se tomaron ideas puntuales): (1) teléfono siempre como link `wa.me/` — `DESIGN_SYSTEM.md`; (2) listas largas agrupadas por categoría — `DESIGN_SYSTEM.md`; (3) checklist de onboarding con % de completitud para el Filtro prestadora-original — `PRD_03_Reclutamiento.md`; (4) colores automáticos por estado de guardia — `DESIGN_SYSTEM.md` + `PRD_02_Panel_Admin.md` Módulo 6. También se registró como nota de arquitectura a futuro (no built) la idea de módulos activables por configuración — `PRD_02_Panel_Admin.md` Módulo 8. | Ninguna de estas ideas viene de un PRD original de prestadora-original — se documentan para que quede claro el origen y no se pierdan en la próxima sesión |
 | 2026-07-07 | Se descartó explícitamente la gamificación de Asistentes (niveles/rankings/puntos) vista en el mismo análisis externo | Contradice la regla anti-subordinación de `CLAUDE.md` (riesgo legal art. 23 LCT / precedente Cabify) — dejar registrado para que no se reproponga sin resolver antes el riesgo legal |
 | 2026-07-07 | Se agrega un quinto rol, `Superadmin`, con login propio y acceso técnico por encima de `Admin` (configuración profunda, alta/baja de elementos sensibles, uso de IA para diagnóstico/corrección de errores) — actualizado en `CONTEXT.md`, `SECURITY.md` y `CLAUDE.md` (raíz) | Decisión de negocio explícita del dueño del proyecto, no estaba en ningún PRD original |
@@ -98,7 +129,24 @@ ningún PRD original._
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
 
-_Sin pendientes abiertos por el momento._
+- **`backend/src/db/schema_etapa2b.sql` no está aplicado contra la base Supabase real
+  todavía.** A diferencia de `schema_etapa2.sql` (que sí se verificó end-to-end en su
+  sesión), este entorno no tiene una connection string directa a Postgres (solo
+  `SUPABASE_SERVICE_ROLE_KEY`, que sirve para la REST API pero no para ejecutar DDL/SQL
+  crudo) ni el CLI de Supabase está enlazado al proyecto (`supabase link` pide la contraseña
+  de la base, que no está guardada en ningún `.env`). Queda pendiente que el usuario pegue
+  el contenido de `schema_etapa2b.sql` en el SQL Editor de Supabase (dashboard) o provea la
+  contraseña de la base para enlazar el CLI. Después de aplicarlo, falta el mismo tipo de
+  verificación end-to-end que se hizo con `schema_etapa2.sql` (login real, lectura/escritura
+  respetando RLS por rol).
+- Las 15 filas seed de `escalas_legales` en `schema_etapa2b.sql` están marcadas
+  explícitamente `'PLACEHOLDER — validar con abogado laboralista'` — son valores de ejemplo
+  para poder testear `calcularCese`/`calcularScoreRiesgo`, no valores legales reales.
+  **No usar en producción sin revisión de un abogado laboralista.**
+- Del PRD_02B quedan deliberadamente afuera de este corte (no bloquean el resto): el
+  generador de documentación (PDF de liquidación de cese, función 7 de 9 del PRD) y una
+  pantalla dedicada para `verificaciones_asistente`/Filtro prestadora-original (la tabla y RLS ya están
+  creadas en el SQL, falta UI).
 
 ## Archivos creados/modificados por sesión
 
@@ -106,6 +154,7 @@ _Una entrada por sesión de trabajo, más reciente primero._
 
 | Fecha | Sesión | Archivos |
 |---|---|---|
+| 2026-07-08 | Módulo 4 del Panel (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo | `backend/src/db/schema_etapa2b.sql` (nuevo, no aplicado aún); `panel/src/lib/{calcularCese,escalasLegales,scoreRiesgo}.js` (nuevos) + `panel/src/lib/__tests__/{calcularCese,scoreRiesgo}.test.js` (nuevos); `panel/src/hooks/useEscalasLegales.js` (nuevo); `panel/src/pages/Asistentes.jsx` (nuevo); `panel/src/pages/asistentes/{AsistenteDetalle,PerfilTab,VinculoCeseTab,SimuladorVinculoTab,ScoreRiesgoTab,AusenciasCoberturaTab}.jsx` (nuevos); `panel/src/App.jsx` (rutas `/asistentes` y `/asistentes/:id`); `panel/src/components/layout/Layout.jsx` (link de nav); `panel/src/index.css` (clases nuevas del Módulo 4, solo variables existentes); `panel/src/i18n/translations.js` (claves `nav.asistentes` + bloque `asistentes` completo en es-AR/en/pt-BR); `panel/package.json` (agregado `vitest`) |
 | 2026-07-08 | Etapa 2: primer corte del Panel de Administración (Módulos 1-3) | `panel/` (app nueva completa: `package.json`, `index.html`, `src/{App,main,index.css}`, `src/styles/variables.css`, `src/components/ui/{Button,FormField,Alert}.jsx`, `src/lib/supabaseClient.js`, `src/i18n/{translations,LocaleContext}.jsx`, `src/context/AuthContext.jsx`, `src/hooks/useSupabaseTable.js`, `src/components/layout/{Layout,ProtectedRoute,EstadoLista}.jsx`, `src/pages/{Login,Dashboard,Postulaciones,PostulacionDetalle,Solicitudes,SolicitudDetalle}.jsx`, `.env.example`, `.gitignore`); `backend/src/db/schema_etapa2.sql` (nuevo), `backend/src/middleware/requiereRolPanel.js` (nuevo), `backend/src/routes/panelNotificaciones.js` (nuevo), `backend/src/utils/email.js` (agregado `enviarEmail`), `backend/src/server.js` (rutas del panel montadas) |
 | 2026-07-08 | Migración de Etapa 1 de Vite a Next.js 15 (App Router) | `sitio-web/package.json`, `sitio-web/next.config.mjs` (nuevos), `sitio-web/src/middleware.js`, `sitio-web/src/lib/i18n.js` (nuevos), `sitio-web/src/app/[locale]/{layout.jsx,page.jsx,servicios,el-filtro,solicita-servicio,trabaja-con-nosotros,contacto,privacidad,terminos}/*`, `sitio-web/src/app/manifest.js` (nuevos), `sitio-web/src/components/{Header,Footer,WhatsAppButton,LanguageSelector}.jsx` (reescritos como server/client components de Next.js), `sitio-web/src/hooks/useFormSubmit.js` (env var `NEXT_PUBLIC_API_URL`), `sitio-web/src/styles/global.css` (ajuste `#root`→`body`), `sitio-web/.env.example`, `sitio-web/.gitignore` (`.next`); eliminados: `sitio-web/index.html`, `sitio-web/vite.config.js`, `sitio-web/src/App.jsx`, `sitio-web/src/main.jsx`, `sitio-web/src/i18n/LocaleContext.jsx`, `sitio-web/src/pages/*` (8 archivos); actualizado `docs/CONTEXT.md` |
 | 2026-07-07 | Etapa 1: sitio web público completo (primera pasada) | `sitio-web/src/pages/*` (8 páginas), `sitio-web/src/components/*` (Header, Footer, WhatsAppButton, LanguageSelector, ui/{Button,FormField,Alert}), `sitio-web/src/i18n/LocaleContext.jsx`, `sitio-web/src/config/siteConfig.js`, `sitio-web/src/hooks/useFormSubmit.js`, `sitio-web/vite.config.js` (PWA), `sitio-web/index.html` (fuentes + meta), `sitio-web/src/styles/{global,components}.css` (reescritos), `backend/src/routes/{solicitudServicio,postulacionAsistente}.js`, `backend/src/db/{connection,schema}.sql`, `backend/src/utils/email.js`, `backend/src/server.js` (rutas conectadas) |

@@ -7,6 +7,8 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Postulaciones } from './pages/Postulaciones';
 import { Solicitudes } from './pages/Solicitudes';
+import { Asistentes } from './pages/Asistentes';
+import { AsistenteDetalle } from './pages/asistentes/AsistenteDetalle';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="postulaciones" element={<Postulaciones />} />
               <Route path="solicitudes" element={<Solicitudes />} />
+              <Route path="asistentes" element={<Asistentes />} />
+              <Route path="asistentes/:id" element={<AsistenteDetalle />} />
             </Route>
           </Routes>
         </BrowserRouter>

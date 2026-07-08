@@ -406,3 +406,70 @@ h2 {
   gap: 0.75rem;
   margin-top: 1rem;
 }
+
+/* ---------- Módulo 4: Plantel de Asistentes ---------- */
+
+.link-volver {
+  background: none;
+  border: none;
+  color: var(--azul-medio);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #E2E8F0;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.panel-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  color: var(--texto-secundario);
+  font-weight: 600;
+}
+
+.panel-tab-activo {
+  color: var(--azul-oscuro);
+  border-bottom-color: var(--azul-medio);
+}
+
+.panel-resultado-calculo {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1rem;
+  border-left: 4px solid var(--azul-medio);
+}
+
+.panel-detalle-calculo-json {
+  background: var(--fondo-alt);
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+
+.panel-card-ausencia {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.score-riesgo-valor {
+  font-size: 1.3rem;
+  margin: 1rem 0;
+}
+
+.score-riesgo-nota {
+  font-weight: 600;
+}
