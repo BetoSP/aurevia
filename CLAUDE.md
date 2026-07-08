@@ -42,7 +42,7 @@ reproponer sin resolver primero el riesgo legal de fondo.
 | Familia | cliente, usuario |
 | Paciente | adulto mayor (salvo contexto clínico específico) |
 | Guardia | turno, jornada, servicio |
-| El Filtro prestadora-original (uso público/marketing, no confirmado si se retoma) | proceso de selección, verificación |
+| El Filtro prestadora-original (uso interno únicamente — nunca en el sitio público, salvo que el usuario lo apruebe explícitamente como marketing) | mencionarlo en el sitio público bajo cualquier nombre |
 | Proceso de Incorporación de Asistentes (uso interno, Panel) | Filtro prestadora-original dentro del Panel, "pipeline" |
 | Certificado prestadora-original | certificado genérico, diploma |
 | Reporte diario | informe, planilla, parte |
@@ -53,10 +53,15 @@ reproponer sin resolver primero el riesgo legal de fondo.
 
 Esto aplica a nombres de variables, tablas, componentes y claves de i18n, no solo a texto visible.
 
-**Nota (decisión 2026-07-08):** "El Filtro prestadora-original" queda reservado para un eventual uso
-público/de marketing, todavía no confirmado. Dentro del Panel (uso interno, Coordinador/
-Admin) la pantalla que avanza al Postulante por las etapas de verificación se llama
-"Proceso de Incorporación de Asistentes" — no usar "Filtro prestadora-original" ahí.
+**Nota (corregida 2026-07-08):** "El Filtro prestadora-original" y, en general, el concepto de
+proceso de selección/verificación de Asistentes son de **uso interno únicamente**. No se
+menciona en el sitio público — ni con ese nombre ni con un nombre genérico inventado
+("proceso de selección de personal", "verificación", etc.) — salvo que el usuario decida
+explícitamente en el futuro usarlo como herramienta de marketing. Dentro del Panel (uso
+interno, Coordinador/Admin) la pantalla que avanza al Postulante por las etapas de
+verificación se llama "Proceso de Incorporación de Asistentes" — no usar "Filtro prestadora-original" ahí.
+Corrección aplicada el mismo día: se sacó del sitio público (`sitio-web`) el nav link, la
+sección de la home y la página dedicada `/el-filtro` que mencionaban "El Filtro prestadora-original".
 
 ## Las 11 reglas no negociables
 
