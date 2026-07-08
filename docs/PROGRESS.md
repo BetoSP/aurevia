@@ -10,7 +10,7 @@
 |---|---|---|
 | 0 | Setup: repo, estructura, variables de entorno | 🟢 Completo |
 | 1 | Sitio web público (páginas + formularios + backend) | 🟡 En progreso |
-| 2 | Panel de administración | 🔴 No iniciado |
+| 2 | Panel de administración | 🟡 En progreso |
 | 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🔴 No iniciado |
 | 3 | PWA Asistentes (login, guardias, GPS, reporte + IA) | 🔴 No iniciado |
 | 4 | PWA Familias (login, reportes, alertas) | 🔴 No iniciado |
@@ -21,23 +21,49 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
-Etapa 1 en progreso: las 8 páginas del sitio público (`PRD_01_Sitio_Web.md`) migradas a
-Next.js 15 (App Router) con rutas `/es-AR`, `/en`, `/pt-BR` (SSG real, verificado con
-`next build`: las 24 páginas se generan como HTML estático), componentes globales
-(Header/Footer/WhatsAppButton/LanguageSelector), i18n es-AR/en/pt-BR vía diccionario
-resuelto por servidor (ya no Context+localStorage), formularios de Solicitá tu Servicio y
-Trabajá con Nosotros con los 4 estados y anti-doble-envío como client components, backend
-Express sin cambios (dos rutas POST contra Supabase + email al coordinador). Build y dev
-server verificados sin errores, incluyendo redirect automático `/` → `/es-AR` vía
-middleware. **Deploy real confirmado (2026-07-08)**: backend en Railway
-(`prestadora-original-backend-production.up.railway.app`) online y respondiendo `/health`; frontend
-Next.js desplegado a producción en Vercel (`sitio-web-drab.vercel.app`) con
-`NEXT_PUBLIC_API_URL` real cargada; verificado end-to-end con un POST real de prueba contra
-`/api/solicitud-servicio` (201 OK, fila de prueba borrada de Supabase después). Se agregó
-también un service worker offline hecho a mano (`public/sw.js` + `public/offline.html`,
-registrado solo en producción) que cierra la deuda técnica de cacheo offline que había
-quedado pendiente de la migración. Pendiente: contenido real de imágenes/fotografía propia y
-dominio propio (`prestadora-originalsalud.com.ar`, placeholder) — queda en el checklist de lanzamiento de
+Etapa 2 iniciada: primer corte del Panel de Administración (`PRD_02_Panel_Admin.md`), scope
+acotado a lo que ya tiene datos reales de Etapa 1 — Módulo 1 (Dashboard), Módulo 2
+(Postulaciones) y Módulo 3 (Solicitudes de Servicio). Quedan deliberadamente afuera de este
+corte: Módulo 4 (Plantel de Asistentes) + `PRD_02B_Gestion_Personal.md` completo (vínculo/
+cese/riesgo legal — merece sesión propia dada su sensibilidad legal), Módulos 5-8, y la
+matriz completa de notificaciones automáticas.
+
+Se creó `panel/` (Vite + React 18.3.1, `react-router-dom`, `@supabase/supabase-js`, sin
+`vite-plugin-pwa` — es una herramienta interna, `<meta name="robots" content="noindex,
+nofollow">`). Reutiliza el patrón i18n de Context+localStorage (no hace falta SEO acá) con
+`T` es-AR/en/pt-BR completo desde el día uno. Login con Supabase Auth (email+password,
+`AuthContext` resuelve el rol desde la tabla nueva `usuarios`). Componente `EstadoLista` +
+hook `useSupabaseTable` implementan los 4 estados (regla 3) de forma reusable en las tres
+pantallas. Cambios de estado con confirmación (`window.confirm`, regla 4) — en postulaciones
+cualquier cambio, en solicitudes solo al pasar a `cancelada`. Botones deshabilitados mientras
+guardan (regla 5). Postulaciones dispara un email automático al postulante en cambio de
+estado vía un endpoint nuevo del backend (`POST /api/panel/notificar/postulante`, protegido
+con `requiereRolPanel` — valida el JWT de Supabase Auth contra `usuarios.rol`).
+
+SQL nuevo (`backend/src/db/schema_etapa2.sql`): tabla `usuarios` (extiende `auth.users`,
+columna `rol` con Admin/Coordinador/Asistente/Familia), columnas `nota_interna` en
+`postulaciones`/`solicitudes`, columna `estado` en `solicitudes`, y policies RLS para que
+Admin/Coordinador lean y editen ambas tablas (sin distinción de zona todavía — se agrega
+cuando el dato de zona de la familia/aspirante esté modelado). Aplicado contra la base
+Supabase real de producción. **Bug encontrado y corregido durante la verificación**:
+recursión infinita en una policy de `usuarios` que subconsultaba la misma tabla
+(`admin_ve_todos_los_usuarios`) — Postgres reevalúa RLS dentro del `EXISTS` y entra en loop.
+Se sacó esa policy (queda solo `usuario_ve_su_propia_fila`, suficiente para que `AuthContext`
+resuelva el rol propio); gestión de otros usuarios (Módulo 8) se resuelve más adelante con
+una función `SECURITY DEFINER`, no con una policy recursiva.
+
+Verificado end-to-end contra Supabase real (no hay browser en este entorno, se simuló con
+scripts): login real, lectura de `usuarios`/`postulaciones`/`solicitudes` por el mismo camino
+que usa el panel (falla si no hay sesión, como corresponde), UPDATE de `postulaciones` con
+la policy nueva, y el endpoint de notificación (autenticación por JWT funciona — devuelve 500
+recién en el paso de enviar el email, por el mismo problema de certificado TLS local ya
+registrado en la entrada de Etapa 1 más abajo, no un bug nuevo). `npm run build` del panel sin
+errores. Primer usuario Admin real creado (`prestadora-original.salud@gmail.com`, credenciales en
+`No hacer commit/claves y contraseñas.txt`).
+
+Etapa 1 sigue 🟡 en progreso — completa y desplegada a producción (Railway + Vercel), solo
+pendiente contenido real de imágenes/fotografía propia y dominio propio
+(`prestadora-originalsalud.com.ar`, placeholder), que queda en el checklist de lanzamiento de
 `PRD_01_Sitio_Web.md`.
 
 ## Decisiones tomadas durante el desarrollo
@@ -64,6 +90,9 @@ ningún PRD original._
 | 2026-07-08 | **Migración completa del frontend de Etapa 1 de Vite+React Router a Next.js 15 (App Router)**, con usuarios cero (momento más barato para el cambio). Se reemplazó `LocaleContext` (React Context + localStorage) por rutas con prefijo de idioma reales (`app/[locale]/...`, `middleware.js` redirige `/` → `/es-AR`), cada página exporta `generateMetadata` con title/description/OpenGraph propios y `generateStaticParams` genera las 3 variantes de idioma como HTML estático en build. Los formularios (`SolicitaServicio`, `TrabajaConNosotros`) y el selector de idioma/menú del header pasaron a client components (`'use client'`), el resto (Footer, WhatsAppButton, páginas) quedó como server components. Se agregó `app/manifest.js` (reemplaza `vite-plugin-pwa`, sin service worker offline todavía). Se actualizó `CONTEXT.md`. El backend Express/Supabase no se tocó. Etapas 3-4 (PWA Asistentes/Familias) siguen en Vite | Mandato explícito y de negocio del usuario: "el seo es fundamental, si no nos ven no nos contactan, si no nos contactan no facturamos, si no facturamos todo esto no sirve para nada" — Vite nunca indexaba nada más que español porque el idioma se resolvía 100% client-side. Usuario también pidió, como criterio general para decisiones de arquitectura futuras, priorizar la opción más versátil a largo plazo por sobre la que "por ahora alcanza" |
 | 2026-07-08 | Deploy real de Etapa 1 confirmado end-to-end: backend en Railway online (`/health` OK), frontend Next.js desplegado a producción en Vercel con `NEXT_PUBLIC_API_URL` real, y un POST de prueba contra `/api/solicitud-servicio` confirmó que el formulario público llega a Supabase a través de Railway (CORS abierto, sin fricción). Fila de prueba borrada después | Cierre del pendiente que había quedado abierto desde la sesión anterior cuando se priorizó la migración a Next.js sobre la verificación del deploy |
 | 2026-07-08 | Service worker offline agregado a mano al sitio público (`public/sw.js` + `public/offline.html`, registrado desde un client component `ServiceWorkerRegister.jsx` en `app/[locale]/layout.jsx`, solo activo en producción): cachea assets estáticos (`_next/static`, íconos, favicon) y muestra `offline.html` con estilo de marca cuando falla la navegación sin red. Se optó por escribirlo directo en vez de una librería (`next-pwa`) para evitar depender de un paquete sin soporte confirmado para Next 15 App Router | Cierre de la deuda técnica registrada en la migración a Next.js; se priorizó una solución simple y sin dependencias nuevas dado que el sitio público no depende de esto para funcionar |
+| 2026-07-08 | Etapa 2 (Panel de Administración) construida con React 18 + Vite (no Next.js) — es una herramienta interna, autenticada, que nunca debe indexarse; el SEO/SSR que justificó Next.js en Etapa 1 no aplica acá, coincide con el stack literal de `PRD_02_Panel_Admin.md` y con la decisión ya tomada para las PWA de Etapas 3-4 | Discutido explícitamente con el usuario ("porque en vite?" / "y cual seria ese costo a pagar?") antes de escribir código, para no repetir el mismo argumento de SEO de la migración de Etapa 1 sin justificación |
+| 2026-07-08 | Primer corte de Etapa 2 acotado a Módulos 1-3 (Dashboard, Postulaciones, Solicitudes) — son los únicos con datos reales ya fluyendo desde Etapa 1. Módulo 4 + `PRD_02B_Gestion_Personal.md` (vínculo/cese/riesgo legal) quedan fuera deliberadamente, para una sesión propia dada la sensibilidad legal del motor de cálculo de indemnizaciones | Evitar construir sobre tablas (`asistentes`, `guardias`, `familias`, `pacientes`) que todavía no existen, y separar el motor legal (regla 10 de `CLAUDE.md`, mayor riesgo) del resto del panel |
+| 2026-07-08 | Se corrigió una policy RLS recursiva (`admin_ve_todos_los_usuarios` en la tabla `usuarios`, subconsultaba la misma tabla dentro de un `EXISTS`) tanto en la base real de Supabase como en `backend/src/db/schema_etapa2.sql`. Se dejó documentado en el propio SQL como comentario para que no se reintroduzca | Postgres reevalúa RLS dentro del `EXISTS`, causando `infinite recursion detected in policy for relation "usuarios"` — descubierto durante la verificación end-to-end con el usuario Admin real recién creado |
 
 ## Problemas conocidos / deuda técnica
 
@@ -77,6 +106,7 @@ _Una entrada por sesión de trabajo, más reciente primero._
 
 | Fecha | Sesión | Archivos |
 |---|---|---|
+| 2026-07-08 | Etapa 2: primer corte del Panel de Administración (Módulos 1-3) | `panel/` (app nueva completa: `package.json`, `index.html`, `src/{App,main,index.css}`, `src/styles/variables.css`, `src/components/ui/{Button,FormField,Alert}.jsx`, `src/lib/supabaseClient.js`, `src/i18n/{translations,LocaleContext}.jsx`, `src/context/AuthContext.jsx`, `src/hooks/useSupabaseTable.js`, `src/components/layout/{Layout,ProtectedRoute,EstadoLista}.jsx`, `src/pages/{Login,Dashboard,Postulaciones,PostulacionDetalle,Solicitudes,SolicitudDetalle}.jsx`, `.env.example`, `.gitignore`); `backend/src/db/schema_etapa2.sql` (nuevo), `backend/src/middleware/requiereRolPanel.js` (nuevo), `backend/src/routes/panelNotificaciones.js` (nuevo), `backend/src/utils/email.js` (agregado `enviarEmail`), `backend/src/server.js` (rutas del panel montadas) |
 | 2026-07-08 | Migración de Etapa 1 de Vite a Next.js 15 (App Router) | `sitio-web/package.json`, `sitio-web/next.config.mjs` (nuevos), `sitio-web/src/middleware.js`, `sitio-web/src/lib/i18n.js` (nuevos), `sitio-web/src/app/[locale]/{layout.jsx,page.jsx,servicios,el-filtro,solicita-servicio,trabaja-con-nosotros,contacto,privacidad,terminos}/*`, `sitio-web/src/app/manifest.js` (nuevos), `sitio-web/src/components/{Header,Footer,WhatsAppButton,LanguageSelector}.jsx` (reescritos como server/client components de Next.js), `sitio-web/src/hooks/useFormSubmit.js` (env var `NEXT_PUBLIC_API_URL`), `sitio-web/src/styles/global.css` (ajuste `#root`→`body`), `sitio-web/.env.example`, `sitio-web/.gitignore` (`.next`); eliminados: `sitio-web/index.html`, `sitio-web/vite.config.js`, `sitio-web/src/App.jsx`, `sitio-web/src/main.jsx`, `sitio-web/src/i18n/LocaleContext.jsx`, `sitio-web/src/pages/*` (8 archivos); actualizado `docs/CONTEXT.md` |
 | 2026-07-07 | Etapa 1: sitio web público completo (primera pasada) | `sitio-web/src/pages/*` (8 páginas), `sitio-web/src/components/*` (Header, Footer, WhatsAppButton, LanguageSelector, ui/{Button,FormField,Alert}), `sitio-web/src/i18n/LocaleContext.jsx`, `sitio-web/src/config/siteConfig.js`, `sitio-web/src/hooks/useFormSubmit.js`, `sitio-web/vite.config.js` (PWA), `sitio-web/index.html` (fuentes + meta), `sitio-web/src/styles/{global,components}.css` (reescritos), `backend/src/routes/{solicitudServicio,postulacionAsistente}.js`, `backend/src/db/{connection,schema}.sql`, `backend/src/utils/email.js`, `backend/src/server.js` (rutas conectadas) |
 | 2026-07-07 | Etapa 0: setup inicial de repo y estructura | `CLAUDE.md` (movido a raíz), `.gitignore`, `README.md`, `docs/COMPETIDORES_PRESTACIONES.md`, `sitio-web/` (scaffold Vite+React+Router, `src/styles/{variables,global,components}.css`, `src/i18n/translations.js`, `.env.example`), `backend/` (scaffold Express, `src/server.js`, `.env.example`, `.gitignore`) |

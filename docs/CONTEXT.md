@@ -67,11 +67,25 @@ Etapa 1 — Sitio web público
   SSR detrás de auth, plugin de PWA maduro).
 
 Etapa 2 — Panel de administración
-  Frontend:  React 18 + Vite (ruta protegida o proyecto separado)
-  Auth:      Supabase Auth (email + password, sin magic link)
-  DB:        Supabase (PostgreSQL + RLS) — mismo proyecto ya creado en Etapa 1, sin migración
+  Frontend:  React 18 + Vite, proyecto separado (`panel/`) — SPA detrás de auth, nunca
+             indexable (<meta name="robots" content="noindex, nofollow">), mismo motivo por
+             el que Etapa 1 sí necesitaba Next.js y esto no
+  Auth:      Supabase Auth (email + password, sin magic link) — rol resuelto desde tabla
+             `usuarios` (extiende `auth.users`), no desde metadata de Auth
+  DB:        Supabase (PostgreSQL + RLS) — mismo proyecto ya creado en Etapa 1, sin migración.
+             El panel lee/escribe directo con la anon key; RLS (no el backend) es el único
+             límite de autorización sobre los datos
+  Backend:   el Express de Etapa 1 gana un uso nuevo, acotado: acciones puntuales que el
+             panel no puede hacer solo con RLS (ej. envío de email al cambiar estado de una
+             postulación) van por `POST /api/panel/*`, protegidas con un middleware que
+             valida el JWT de Supabase Auth contra `usuarios.rol`
   Nota: el sitio público sigue en Express como capa de validación/envío de email, pero
   ambos (sitio y panel) leen/escriben la misma base Supabase.
+
+  Estado (2026-07-08): primer corte construido — Módulo 1 (Dashboard), Módulo 2
+  (Postulaciones), Módulo 3 (Solicitudes de Servicio). Módulo 4 (Plantel de Asistentes) y
+  `PRD_02B_Gestion_Personal.md` completo, y Módulos 5-8, quedan para sesiones siguientes
+  (ver `docs/PROGRESS.md`).
 
 Etapas 3 y 4 — PWA Asistentes / PWA Familias
   Framework: React 18 + Vite + Vite PWA Plugin

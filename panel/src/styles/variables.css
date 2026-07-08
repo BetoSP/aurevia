@@ -1,0 +1,13 @@
+:root {
+  --azul-oscuro: #1F4E79;
+  --azul-medio: #2E75B6;
+  --verde-exito: #28A745;
+  --naranja-alerta: #FD7E14;
+  --rojo-peligro: #DC3545;
+  --fondo-alt: #F0F4F8;
+  --texto-principal: #1A1A2E;
+  --texto-secundario: #666666;
+
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+}

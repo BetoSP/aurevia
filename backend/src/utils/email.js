@@ -19,3 +19,12 @@ export async function enviarEmailCoordinador({ asunto, texto }) {
     text: texto,
   });
 }
+
+export async function enviarEmail({ to, asunto, texto }) {
+  await transporter.sendMail({
+    from: process.env.SMTP_USER,
+    to,
+    subject: asunto,
+    text: texto,
+  });
+}
