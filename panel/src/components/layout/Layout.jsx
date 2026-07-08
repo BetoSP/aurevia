@@ -22,6 +22,7 @@ export function Layout() {
           <NavLink to="/familias">{t.nav.familias}</NavLink>
           <NavLink to="/lista-precios">{t.nav.lista_precios}</NavLink>
           {esAdminOSuperior(usuario?.rol) && <NavLink to="/usuarios-panel">{t.nav.usuarios_panel}</NavLink>}
+          {esAdminOSuperior(usuario?.rol) && <NavLink to="/configuracion">{t.nav.configuracion}</NavLink>}
         </nav>
       </aside>
       <div className="panel-main">

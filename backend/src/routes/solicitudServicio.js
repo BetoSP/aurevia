@@ -28,6 +28,7 @@ solicitudServicioRouter.post('/', async (req, res) => {
 
   try {
     await enviarEmailCoordinador({
+      evento: 'nueva_solicitud_servicio',
       asunto: `Nueva solicitud de servicio — ${nombre}`,
       texto: `Nombre: ${nombre}\nTeléfono: ${telefono}\nEmail: ${email}\nLocalidad: ${localidad}\nServicio: ${tipo_servicio} (${modalidad})\nDías y horario: ${dias_horario}\nDescripción: ${descripcion ?? '—'}`,
     });
