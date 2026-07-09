@@ -14,6 +14,10 @@ postulacionAsistenteRouter.post('/', async (req, res) => {
     return res.status(400).json({ error: 'campos_obligatorios_faltantes' });
   }
 
+  if (!/^\d{7,8}$/.test(dni)) {
+    return res.status(400).json({ error: 'dni_invalido' });
+  }
+
   const { error } = await supabase.from('postulaciones').insert({
     nombre, dni, telefono, email, especialidades, zonas, disponibilidad,
     anios_experiencia: anios_experiencia ?? null,

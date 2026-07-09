@@ -740,6 +740,52 @@ es una etapa nueva completa (login, guardias, GPS, reporte diario con IA) que am
 propio arranque de sesión con lectura de PRD y confirmación de alcance, no una extensión
 del trabajo de esta noche.
 
+## Actualización — Auditoría exhaustiva del commit de la Función 7 (bugs y faltantes)
+
+A pedido explícito del usuario, se auditó en profundidad el código agregado en el commit
+anterior (generador de documentación PDF + pipeline de DNI) buscando bugs reales, no
+estilo. Hallazgos y cierres (2026-07-09):
+
+- **Crítico — Certificado de trabajo con dato incorrecto para Coordinador**: el botón nuevo
+  en `PerfilTab.jsx` estaba disponible para Coordinador, pero ese rol carga los datos desde
+  la vista restringida `asistentes_coordinador`, que no incluye `tipo_vinculo` (está en la
+  lista explícita de "datos laborales sensibles" de `schema_etapa2j.sql`) ni `fecha_baja`. El
+  PDF terminaba declarando siempre "monotributo" aunque el Asistente real estuviera en
+  relación de dependencia, y nunca reflejaba un cese ya registrado — un documento legal
+  formal con dato falso. Corregido: los dos botones de certificado ahora son admin-only en
+  `PerfilTab.jsx`, consistente con que el dato que necesitan no está disponible para
+  Coordinador por diseño.
+- **Crítico — término prohibido por el glosario**: el telegrama de cese
+  (`generarDocumentoCese.js`) decía "extinción del contrato de trabajo" — exactamente el tipo
+  de lenguaje de relación laboral que el glosario obligatorio de `CLAUDE.md` prohíbe (riesgo
+  legal tipo Cabify). Corregido a "extinción del vínculo", consistente con el resto de los
+  documentos del mismo archivo.
+- **Medio — corrimiento de fecha de un día**: `formatoFecha()` parseaba columnas `DATE` de
+  Postgres ("YYYY-MM-DD") con `new Date()`, que las interpreta como UTC medianoche;
+  `toLocaleDateString('es-AR')` las mostraba un día antes en horario argentino (UTC-3).
+  Afectaba fechas de alta/baja/cese/ausencia en los 6 documentos. Corregido: fechas
+  sin hora se formatean directo desde el string, sin pasar por `Date`.
+- **Medio — vista `asistentes_coordinador` sin la columna `dni` nueva**: agregada en
+  `schema_etapa2m.sql` pero nunca sumada a la vista, así que Coordinador siempre veía
+  "DNI: —" y cualquier constancia de ausencia que generara salía sin DNI. El DNI no es un
+  dato laboral sensible (no está en la lista de `schema_etapa2j.sql`) — es dato
+  identificatorio, igual que teléfono/email, que la vista ya expone. Cerrado con
+  `backend/src/db/schema_etapa2n.sql` (nuevo, aplicado y verificado contra Supabase real).
+- **Menor — sin validación de formato de DNI**: el formulario público y el backend solo
+  validaban "no vacío". Se agregó `pattern="\d{7,8}"` en el campo del formulario (con texto
+  de ayuda nuevo en las 3 locales) y la misma validación (`/^\d{7,8}$/`) en
+  `backend/src/routes/postulacionAsistente.js`.
+- **Bug pre-existente encontrado de paso (no de esta noche)**: en `AsistenteDetalle.jsx`, el
+  tab "Ausencias y Cobertura" ya estaba en la lista de tabs visibles para Coordinador
+  (`TABS_COORDINADOR`, agregado en la auditoría anterior — ver "Cierre de hallazgos
+  médios/menores" arriba) pero el render seguía condicionado a `&& esAdmin`, así que
+  Coordinador veía el tab en la barra pero contenido vacío al hacer clic. Corregido
+  quitando la condición redundante — es exactamente el bug que esa auditoría anterior decía
+  haber cerrado, pero el fix quedó incompleto en un solo lugar.
+
+**Verificado**: `npm run build` de `panel/` y `sitio-web/` sin errores; `npx vitest run`
+18/18 en `panel/`; `schema_etapa2n.sql` corrió sin error contra la base real.
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._

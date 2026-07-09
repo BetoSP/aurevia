@@ -50,7 +50,15 @@ function piePagina(doc) {
 }
 
 function formatoFecha(fecha) {
-  return fecha ? new Date(fecha).toLocaleDateString('es-AR') : '—';
+  if (!fecha) return '—';
+  // Las columnas DATE de Postgres llegan como "YYYY-MM-DD" — parsearlas con `new Date()`
+  // las interpreta como UTC medianoche, y en horario argentino (UTC-3) toLocaleDateString
+  // las corre un día para atrás. Se formatea directo desde el string para fechas sin hora.
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-');
+    return `${dia}/${mes}/${anio}`;
+  }
+  return new Date(fecha).toLocaleDateString('es-AR');
 }
 
 function formatoMonto(monto) {
@@ -101,7 +109,7 @@ export function generarTelegramaCese({ asistente, cese, causalLabel }) {
   y = parrafo(doc, `Fecha: ${formatoFecha(new Date())}`, y);
   y = parrafo(doc, `Destinatario: ${asistente.nombre} (DNI ${asistente.dni ?? '—'})`, y, { espacioExtra: 8 });
 
-  const texto = `Por la presente se notifica la extinción del contrato de trabajo con fecha ` +
+  const texto = `Por la presente se notifica la extinción del vínculo con fecha ` +
     `${formatoFecha(cese.fecha_cese)}, con la causal "${causalLabel}". ` +
     `[Completar aquí el texto formal correspondiente a la causal, con la asistencia de un ` +
     `abogado laboralista — este documento es un borrador estructurado, no un texto legal final.]`;

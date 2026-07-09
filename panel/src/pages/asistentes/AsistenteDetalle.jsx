@@ -79,7 +79,7 @@ export function AsistenteDetalle() {
         {tab === 'vinculo_cese' && esAdmin && <VinculoCeseTab asistente={asistente} onActualizado={recargar} />}
         {tab === 'simulador' && esAdmin && <SimuladorVinculoTab asistente={asistente} />}
         {tab === 'score_riesgo' && esAdmin && <ScoreRiesgoTab asistente={asistente} onActualizado={recargar} />}
-        {tab === 'ausencias' && esAdmin && <AusenciasCoberturaTab asistente={asistente} />}
+        {tab === 'ausencias' && <AusenciasCoberturaTab asistente={asistente} />}
       </div>
     </div>
   );

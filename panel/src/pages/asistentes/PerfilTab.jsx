@@ -129,14 +129,16 @@ export function PerfilTab({ asistente, onActualizado }) {
 
       <Button onClick={guardar} disabled={guardando}>{guardando ? t.comun.guardando : t.comun.guardar}</Button>
 
-      <h2>{t.asistentes.documentos.titulo}</h2>
-      <Button variant="secondary" onClick={descargarCertificadoTrabajo}>
-        {t.asistentes.documentos.certificado_trabajo}
-      </Button>
       {esAdmin && (
-        <Button variant="secondary" onClick={descargarCertificadoRemuneraciones}>
-          {t.asistentes.documentos.certificado_remuneraciones}
-        </Button>
+        <>
+          <h2>{t.asistentes.documentos.titulo}</h2>
+          <Button variant="secondary" onClick={descargarCertificadoTrabajo}>
+            {t.asistentes.documentos.certificado_trabajo}
+          </Button>
+          <Button variant="secondary" onClick={descargarCertificadoRemuneraciones}>
+            {t.asistentes.documentos.certificado_remuneraciones}
+          </Button>
+        </>
       )}
     </div>
   );
