@@ -38,8 +38,8 @@ function App() {
               <Route path="familias" element={<Familias />} />
               <Route path="familias/:id" element={<FamiliaDetalle />} />
               <Route path="lista-precios" element={<ListaPrecios />} />
-              <Route path="usuarios-panel" element={<UsuariosPanel />} />
-              <Route path="configuracion" element={<Configuracion />} />
+              <Route path="usuarios-panel" element={<ProtectedRoute soloAdmin><UsuariosPanel /></ProtectedRoute>} />
+              <Route path="configuracion" element={<ProtectedRoute soloAdmin><Configuracion /></ProtectedRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

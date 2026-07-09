@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
 import { esAdminOSuperior } from '../lib/roles';
+import { traducirCodigos } from '../lib/postulacionCodigos';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
@@ -103,15 +104,15 @@ export function PostulacionDetalle({ postulacion, onClose, onActualizada }) {
           <dt>{t.postulaciones.email}</dt>
           <dd>{postulacion.email}</dd>
           <dt>{t.postulaciones.col_especialidades}</dt>
-          <dd>{postulacion.especialidades}</dd>
+          <dd>{traducirCodigos(postulacion.especialidades, t.postulaciones.especialidades_labels)}</dd>
           <dt>{t.postulaciones.col_zonas}</dt>
-          <dd>{postulacion.zonas}</dd>
+          <dd>{traducirCodigos(postulacion.zonas, t.postulaciones.zonas_labels)}</dd>
           <dt>{t.postulaciones.disponibilidad}</dt>
-          <dd>{postulacion.disponibilidad}</dd>
+          <dd>{traducirCodigos(postulacion.disponibilidad, t.postulaciones.disponibilidad_labels)}</dd>
           <dt>{t.postulaciones.anios_experiencia}</dt>
           <dd>{postulacion.anios_experiencia || '—'}</dd>
           <dt>{t.postulaciones.col_situacion_fiscal}</dt>
-          <dd>{postulacion.situacion_fiscal}</dd>
+          <dd>{t.postulaciones.situacion_fiscal_labels[postulacion.situacion_fiscal] ?? postulacion.situacion_fiscal}</dd>
           <dt>{t.postulaciones.como_conocio}</dt>
           <dd>{postulacion.como_conocio || '—'}</dd>
           <dt>{t.postulaciones.mensaje}</dt>

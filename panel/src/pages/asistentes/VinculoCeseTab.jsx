@@ -90,7 +90,7 @@ export function VinculoCeseTab({ asistente, onActualizado }) {
                 <td>{new Date(c.fecha_cese).toLocaleDateString()}</td>
                 <td>{t.asistentes.causales[c.causal]}</td>
                 <td>{c.monto_total !== null ? `$${Number(c.monto_total).toLocaleString('es-AR')}` : '—'}</td>
-                <td>{c.revisado_por_abogado ? '✓' : <span className="badge badge-en_revision">{t.comun.no ?? 'No'}</span>}</td>
+                <td>{c.revisado_por_abogado ? '✓' : <span className="badge badge-en_revision">{t.comun.no}</span>}</td>
               </tr>
             ))}
           </tbody>

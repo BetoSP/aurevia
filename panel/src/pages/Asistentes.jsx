@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../i18n/LocaleContext';
+import { useAuth } from '../context/AuthContext';
+import { esAdminOSuperior } from '../lib/roles';
 import { useSupabaseTable } from '../hooks/useSupabaseTable';
 import { EstadoLista } from '../components/layout/EstadoLista';
 
@@ -9,7 +11,10 @@ const ESTADOS = ['activo', 'inactivo', 'cesado'];
 export function Asistentes() {
   const { t } = useLocale();
   const navigate = useNavigate();
-  const { filas, estado, error, recargar } = useSupabaseTable('asistentes', { orderBy: 'created_at' });
+  const { usuario } = useAuth();
+  const esAdmin = esAdminOSuperior(usuario?.rol);
+  // Coordinador consulta la vista sin vínculo laboral/score de riesgo — ver schema_etapa2i.sql.
+  const { filas, estado, error, recargar } = useSupabaseTable(esAdmin ? 'asistentes' : 'asistentes_coordinador', { orderBy: 'created_at' });
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
 
@@ -52,9 +57,9 @@ export function Asistentes() {
               <th>{t.asistentes.col_nombre}</th>
               <th>{t.asistentes.col_especialidades}</th>
               <th>{t.asistentes.col_zonas}</th>
-              <th>{t.asistentes.col_vinculo}</th>
+              {esAdmin && <th>{t.asistentes.col_vinculo}</th>}
               <th>{t.asistentes.col_estado}</th>
-              <th>{t.asistentes.col_score_riesgo}</th>
+              {esAdmin && <th>{t.asistentes.col_score_riesgo}</th>}
               <th></th>
             </tr>
           </thead>
@@ -64,13 +69,13 @@ export function Asistentes() {
                 <td>{a.nombre}</td>
                 <td>{(a.especialidades || []).join(', ')}</td>
                 <td>{(a.zonas || []).join(', ')}</td>
-                <td>{t.asistentes[`vinculo_${a.tipo_vinculo}`]}</td>
+                {esAdmin && <td>{t.asistentes[`vinculo_${a.tipo_vinculo}`]}</td>}
                 <td>
                   <span className={`badge badge-${a.estado === 'activo' ? 'aprobado' : a.estado === 'cesado' ? 'rechazado' : ''}`}>
                     {t.asistentes[`estado_${a.estado}`]}
                   </span>
                 </td>
-                <td>{a.score_riesgo_reclasificacion}</td>
+                {esAdmin && <td>{a.score_riesgo_reclasificacion}</td>}
                 <td>
                   <button onClick={() => navigate(`/asistentes/${a.id}`)}>{t.comun.ver_detalle}</button>
                 </td>

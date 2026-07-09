@@ -123,6 +123,7 @@ function TabZonas() {
   const [estado, setEstado] = useState('cargando');
   const [error, setError] = useState(null);
   const [creandoNueva, setCreandoNueva] = useState(false);
+  const [actualizandoZona, setActualizandoZona] = useState(null);
 
   const recargar = useCallback(async () => {
     setEstado('cargando');
@@ -142,6 +143,7 @@ function TabZonas() {
   }, [recargar]);
 
   async function toggleActiva(zona) {
+    setActualizandoZona(zona.id);
     try {
       await llamarApi(`/zonas/${zona.id}`, {
         method: 'PATCH',
@@ -150,16 +152,21 @@ function TabZonas() {
       recargar();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setActualizandoZona(null);
     }
   }
 
   async function borrar(zona) {
     if (!window.confirm(t.configuracion.zonas_confirmar_borrar)) return;
+    setActualizandoZona(zona.id);
     try {
       await llamarApi(`/zonas/${zona.id}`, { method: 'DELETE' });
       recargar();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setActualizandoZona(null);
     }
   }
 
@@ -187,10 +194,10 @@ function TabZonas() {
                 <td>{z.nombre}</td>
                 <td>{t.configuracion[`zonas_categoria_${z.categoria}`]}</td>
                 <td>
-                  <input type="checkbox" checked={z.activa} onChange={() => toggleActiva(z)} />
+                  <input type="checkbox" checked={z.activa} onChange={() => toggleActiva(z)} disabled={actualizandoZona === z.id} />
                 </td>
                 <td>
-                  <button onClick={() => borrar(z)}>{t.comun.borrar}</button>
+                  <button onClick={() => borrar(z)} disabled={actualizandoZona === z.id}>{t.comun.borrar}</button>
                 </td>
               </tr>
             ))}

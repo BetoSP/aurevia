@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
+import { linkWhatsapp } from '../lib/telefono';
 import { useSupabaseTable } from '../hooks/useSupabaseTable';
 import { EstadoLista } from '../components/layout/EstadoLista';
 import { SolicitudDetalle } from './SolicitudDetalle';
@@ -65,7 +66,7 @@ export function Solicitudes() {
               <tr key={s.id}>
                 <td>{s.nombre}</td>
                 <td>
-                  <a href={`tel:${s.telefono}`}>{s.telefono}</a>
+                  <a href={linkWhatsapp(s.telefono)} target="_blank" rel="noreferrer">{s.telefono}</a>
                 </td>
                 <td>{s.localidad}</td>
                 <td>{s.tipo_servicio}</td>

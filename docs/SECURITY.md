@@ -109,6 +109,19 @@ Para `coordinador`, la policy de "su zona" debe filtrar por el campo `zonas` del
 Coordinador contra la zona de la `familia`/`asistente` — no dar acceso total a
 `coordinador` salvo en las tablas donde el PRD lo indica explícitamente.
 
+**Estado real (actualizado 2026-07-09):** implementado y aplicado contra Supabase real
+(`backend/src/db/schema_etapa2i.sql`) para las tablas donde existe una columna `zonas` real
+o un join directo a `asistentes.zonas`: `asistentes` (lectura y edición),
+`verificaciones_asistente`, `ausencias`, `guardias_cobertura`, `certificados` — vía
+`usuarios.zonas && tabla.zonas` (operador de overlap de arrays) en policies separadas de
+`admin_*` (sin filtro) y `coordinador_*_de_su_zona` (filtradas), que Postgres combina con OR
+al ser ambas permisivas. **Pendiente, no resuelto**: `solicitudes`/`familias`/`pacientes`/
+`prestaciones` no tienen zona modelada como código real (`solicitudes.localidad` es texto
+libre sin FK a `zonas_cobertura`) — Coordinador sigue viendo todas las filas de estas 4
+tablas, igual que Admin, hasta que exista una decisión de producto sobre cómo derivar la
+zona de una Familia/Solicitud (agregar un `select` de zona al formulario público, inferir
+por `localidad`, u otra opción). No adivinar esa semántica sin confirmarla primero.
+
 ## Datos sensibles — qué nunca se loguea ni va en URL/GET
 
 - Sueldos, honorarios, montos de `ceses`.

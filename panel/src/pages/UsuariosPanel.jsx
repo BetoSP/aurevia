@@ -156,7 +156,7 @@ function NuevoUsuarioPanel({ esSuperadmin, onClose, onCreado }) {
         <h2>{esSuperadmin ? t.usuarios_panel.nuevo_usuario : t.usuarios_panel.nuevo_coordinador}</h2>
         {error && <Alert variant="error">{error}</Alert>}
         <FormField label={t.usuarios_panel.col_nombre} name="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-        <FormField label="Email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <FormField label={t.usuarios_panel.col_email} name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         {esSuperadmin && (
           <FormField label={t.usuarios_panel.campo_rol} name="rol" type="select" value={rol} onChange={(e) => setRol(e.target.value)}>
             <option value="coordinador">{t.usuarios_panel.rol_coordinador}</option>

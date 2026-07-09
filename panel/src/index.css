@@ -400,6 +400,12 @@ h2 {
   font-size: 0.9rem;
 }
 
+.panel-explicacion {
+  color: var(--texto-secundario);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 1rem;
+}
+
 .panel-modal-acciones {
   display: flex;
   justify-content: flex-end;

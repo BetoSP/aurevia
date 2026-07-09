@@ -14,20 +14,32 @@ function fechaAltaHace(meses, hoy) {
   return d.toISOString().slice(0, 10);
 }
 
+// Nunca se inventa un valor_hora/sueldo_basico de referencia acá (regla 1 de CLAUDE.md:
+// nunca hardcodear valores legales/monetarios) — si el Asistente no tiene el dato de base
+// cargado en su Perfil, la proyección para ese vínculo directamente no se puede calcular.
 function proyectarCosto(asistenteBase, tipoVinculo, escalasResueltas, hoy) {
+  const valorHora = asistenteBase.valor_hora ? Number(asistenteBase.valor_hora) : null;
+  const horasSemanales = asistenteBase.horas_semanales ? Number(asistenteBase.horas_semanales) : null;
+  const sueldoBasico = asistenteBase.sueldo_basico
+    ? Number(asistenteBase.sueldo_basico)
+    : (valorHora && horasSemanales ? valorHora * horasSemanales * 4.33 : null);
+
   const asistenteHipotetico = {
     ...asistenteBase,
     tipo_vinculo: tipoVinculo,
-    valor_hora: tipoVinculo === 'monotributo' ? (asistenteBase.valor_hora || 3000) : null,
-    sueldo_basico: tipoVinculo === 'dependencia' ? (asistenteBase.sueldo_basico || asistenteBase.valor_hora * asistenteBase.horas_semanales * 4.33 || 500000) : null,
+    valor_hora: tipoVinculo === 'monotributo' ? valorHora : null,
+    sueldo_basico: tipoVinculo === 'dependencia' ? sueldoBasico : null,
   };
 
+  const faltaDato = tipoVinculo === 'monotributo' ? valorHora === null : sueldoBasico === null;
+
   return ANTIGUEDADES_MESES.map((meses) => {
+    if (faltaDato) return { meses, montoDespidoSinCausa: null, faltaDato: true };
     const asistenteProyectado = { ...asistenteHipotetico, fecha_alta: fechaAltaHace(meses, hoy) };
     const r = calcularCese({
       asistente: asistenteProyectado, fechaCese: hoy, causal: 'despido_sin_causa', escalasLegales: escalasResueltas,
     });
-    return { meses, montoDespidoSinCausa: r.montoTotal };
+    return { meses, montoDespidoSinCausa: r.montoTotal, faltaDato: false };
   });
 }
 
@@ -64,8 +76,8 @@ export function SimuladorVinculoTab({ asistente }) {
               {ANTIGUEDADES_MESES.map((meses, i) => (
                 <tr key={meses}>
                   <td>{t.asistentes.simulador.meses.replace('{n}', meses)}</td>
-                  <td>{proyecciones.monotributo[i].montoDespidoSinCausa !== null ? `$${proyecciones.monotributo[i].montoDespidoSinCausa.toLocaleString('es-AR')}` : '—'}</td>
-                  <td>{proyecciones.dependencia[i].montoDespidoSinCausa !== null ? `$${proyecciones.dependencia[i].montoDespidoSinCausa.toLocaleString('es-AR')}` : '—'}</td>
+                  <td>{proyecciones.monotributo[i].faltaDato ? t.asistentes.simulador.falta_dato_base : (proyecciones.monotributo[i].montoDespidoSinCausa !== null ? `$${proyecciones.monotributo[i].montoDespidoSinCausa.toLocaleString('es-AR')}` : '—')}</td>
+                  <td>{proyecciones.dependencia[i].faltaDato ? t.asistentes.simulador.falta_dato_base : (proyecciones.dependencia[i].montoDespidoSinCausa !== null ? `$${proyecciones.dependencia[i].montoDespidoSinCausa.toLocaleString('es-AR')}` : '—')}</td>
                 </tr>
               ))}
             </tbody>

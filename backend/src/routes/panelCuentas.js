@@ -6,9 +6,9 @@ import { crearCuentaConPerfil, borrarCuenta } from '../utils/cuentasPanel.js';
 export const panelCuentasRouter = Router();
 
 // Crear una cuenta real (Auth + perfil) es una acción sensible y difícil de revertir —
-// se restringe a Admin, a diferencia del resto del panel que también admite Coordinador.
+// se restringe a Admin/Superadmin, a diferencia del resto del panel que también admite Coordinador.
 function requiereAdmin(req, res, next) {
-  if (req.usuarioPanel?.rol !== 'admin') {
+  if (!['admin', 'superadmin'].includes(req.usuarioPanel?.rol)) {
     return res.status(403).json({ error: 'Solo Admin puede crear cuentas' });
   }
   next();

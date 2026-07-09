@@ -3,7 +3,7 @@
 --
 -- Modelo (confirmado con el usuario): la lista de precios es solo una referencia interna,
 -- nunca vinculante ni visible fuera del panel (regla de negocio explícita: ningún medio
--- público habla de precios). Lo que realmente rige para cada cliente es la Prestación
+-- público habla de precios). Lo que realmente rige para cada Familia es la Prestación
 -- particular, que guarda una FOTO del precio de lista al momento de armarla — no una
 -- referencia viva — para que un cambio posterior en la lista general no mueva un precio ya
 -- pactado con una familia. Cuando la lista general cambia, se marca la Prestación vigente

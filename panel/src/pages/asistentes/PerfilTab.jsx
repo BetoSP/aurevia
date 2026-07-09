@@ -78,11 +78,19 @@ export function PerfilTab({ asistente, onActualizado }) {
       <FormField label={t.asistentes.col_especialidades} name="especialidades" value={form.especialidades} onChange={(e) => set('especialidades', e.target.value)} />
       <FormField label={t.asistentes.col_zonas} name="zonas" value={form.zonas} onChange={(e) => set('zonas', e.target.value)} />
 
-      <FormField label={t.asistentes.col_estado} name="estado" type="select" value={form.estado} onChange={(e) => set('estado', e.target.value)}>
-        <option value="activo">{t.asistentes.estado_activo}</option>
-        <option value="inactivo">{t.asistentes.estado_inactivo}</option>
-        <option value="cesado">{t.asistentes.estado_cesado}</option>
-      </FormField>
+      {asistente.estado === 'cesado' ? (
+        <>
+          <FormField label={t.asistentes.col_estado} name="estado" type="select" value="cesado" disabled>
+            <option value="cesado">{t.asistentes.estado_cesado}</option>
+          </FormField>
+          <Alert variant="info">{t.asistentes.cese.ya_cesado}</Alert>
+        </>
+      ) : (
+        <FormField label={t.asistentes.col_estado} name="estado" type="select" value={form.estado} onChange={(e) => set('estado', e.target.value)}>
+          <option value="activo">{t.asistentes.estado_activo}</option>
+          <option value="inactivo">{t.asistentes.estado_inactivo}</option>
+        </FormField>
+      )}
 
       {esAdmin && (
         <>

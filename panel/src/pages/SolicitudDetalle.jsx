@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
 import { esAdminOSuperior } from '../lib/roles';
+import { linkWhatsapp } from '../lib/telefono';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
 import { FormField } from '../components/ui/FormField';
@@ -83,7 +84,7 @@ export function SolicitudDetalle({ solicitud, onClose, onActualizada }) {
         <dl className="panel-detalle-lista">
           <dt>{t.solicitudes.col_telefono}</dt>
           <dd>
-            <a href={`tel:${solicitud.telefono}`}>{solicitud.telefono}</a> ({t.solicitudes.llamar})
+            <a href={linkWhatsapp(solicitud.telefono)} target="_blank" rel="noreferrer">{solicitud.telefono}</a> ({t.solicitudes.llamar})
           </dd>
           <dt>{t.solicitudes.email}</dt>
           <dd>{solicitud.email}</dd>

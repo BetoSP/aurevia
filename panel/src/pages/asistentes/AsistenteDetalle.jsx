@@ -13,7 +13,11 @@ import { ScoreRiesgoTab } from './ScoreRiesgoTab';
 import { AusenciasCoberturaTab } from './AusenciasCoberturaTab';
 
 const TABS = ['perfil', 'verificacion', 'certificado', 'vinculo_cese', 'simulador', 'score_riesgo', 'ausencias'];
-const TABS_COORDINADOR = ['perfil', 'verificacion', 'certificado'];
+// Ausencias y Cobertura es operativo (tipo/fechas/sustituto), no datos laborales sensibles —
+// Coordinador ya tiene RLS de zona sobre "ausencias"/"guardias_cobertura" (schema_etapa2i.sql),
+// así que el tab estaba vetado en el frontend sin motivo, dejando una función habilitada en
+// el backend pero inalcanzable desde la UI.
+const TABS_COORDINADOR = ['perfil', 'verificacion', 'certificado', 'ausencias'];
 
 export function AsistenteDetalle() {
   const { t } = useLocale();
@@ -25,26 +29,31 @@ export function AsistenteDetalle() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('perfil');
 
+  const esAdmin = esAdminOSuperior(usuario?.rol);
+
   const recargar = useCallback(async () => {
     setEstado('cargando');
-    const { data, error: errorConsulta } = await supabase.from('asistentes').select('*').eq('id', id).single();
+    // Coordinador consulta la vista restringida (sin sueldo/causal de cese/vínculo laboral) —
+    // ver schema_etapa2i.sql. RLS es row-level, no column-level, así que la restricción de
+    // columnas se resuelve acá, no solo ocultando tabs/campos en el frontend.
+    const tabla = esAdmin ? 'asistentes' : 'asistentes_coordinador';
+    const { data, error: errorConsulta } = await supabase.from(tabla).select('*').eq('id', id).single();
     if (errorConsulta) {
-      setError(errorConsulta.message);
-      setEstado('error');
+      setError(errorConsulta.code === 'PGRST116' ? null : errorConsulta.message);
+      setEstado(errorConsulta.code === 'PGRST116' ? 'no_encontrado' : 'error');
       return;
     }
     setAsistente(data);
     setEstado('listo');
-  }, [id]);
+  }, [id, esAdmin]);
 
   useEffect(() => {
     recargar();
   }, [recargar]);
 
   if (estado === 'cargando') return <p className="estado-cargando">{t.comun.cargando}</p>;
+  if (estado === 'no_encontrado') return <p className="estado-vacio">{t.comun.no_encontrado}</p>;
   if (estado === 'error') return <p className="estado-vacio">{error || t.comun.error_generico}</p>;
-
-  const esAdmin = esAdminOSuperior(usuario?.rol);
 
   return (
     <div>

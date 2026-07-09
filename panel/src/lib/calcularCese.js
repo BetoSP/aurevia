@@ -9,7 +9,9 @@ const CAUSALES_SIN_CALCULO_AUTOMATICO = new Set([
 // Causales que nunca pagan indemnización pero sí requieren revisión legal antes de cerrarse.
 const CAUSALES_JUSTA_CAUSA = new Set(['despido_con_justa_causa', 'abandono_de_trabajo']);
 
-function aniosCompletos(fechaAlta, fechaHecho) {
+// Fracción mayor al umbral vigente computa como año completo (regla LCT art. 245) —
+// el umbral (histórico: 3 meses/90 días) se lee de escalas_legales, nunca hardcodeado (regla 10).
+function aniosCompletos(fechaAlta, fechaHecho, escalasResueltas) {
   const alta = new Date(fechaAlta);
   const hecho = new Date(fechaHecho);
   let anios = hecho.getFullYear() - alta.getFullYear();
@@ -17,12 +19,14 @@ function aniosCompletos(fechaAlta, fechaHecho) {
   cumpleEsteAnio.setFullYear(alta.getFullYear() + anios);
   if (cumpleEsteAnio > hecho) anios -= 1;
 
-  // Fracción mayor a 3 meses computa como año completo (regla LCT art. 245)
-  const proximoAniversario = new Date(alta);
-  proximoAniversario.setFullYear(alta.getFullYear() + anios + 1);
-  const diasHastaProximo = (proximoAniversario - hecho) / (1000 * 60 * 60 * 24);
-  const diasDelAnio = (proximoAniversario - cumpleEsteAnio) / (1000 * 60 * 60 * 24);
-  if (diasDelAnio - diasHastaProximo > 90) anios += 1;
+  const umbralDias = obtenerValorEscala(escalasResueltas, 'fraccion_computable_antiguedad', 'general');
+  if (umbralDias !== null) {
+    const proximoAniversario = new Date(alta);
+    proximoAniversario.setFullYear(alta.getFullYear() + anios + 1);
+    const diasHastaProximo = (proximoAniversario - hecho) / (1000 * 60 * 60 * 24);
+    const diasDelAnio = (proximoAniversario - cumpleEsteAnio) / (1000 * 60 * 60 * 24);
+    if (diasDelAnio - diasHastaProximo > umbralDias) anios += 1;
+  }
 
   return Math.max(anios, 0);
 }
@@ -62,7 +66,7 @@ function calcularPreaviso(asistente, fechaCese, escalasResueltas, advertencias) 
 }
 
 function calcularIndemnizacionAntiguedad(asistente, fechaCese, escalasResueltas, advertencias) {
-  const anios = aniosCompletos(asistente.fecha_alta, fechaCese);
+  const anios = aniosCompletos(asistente.fecha_alta, fechaCese, escalasResueltas);
   const mesesPorAnio = obtenerValorEscala(escalasResueltas, 'indemnizacion_antiguedad', 'meses_por_anio');
   const tope = obtenerValorEscala(escalasResueltas, 'tope_indemnizatorio', 'general');
   const pisoMeses = obtenerValorEscala(escalasResueltas, 'piso_minimo_indemnizacion', 'meses');
@@ -101,8 +105,10 @@ function calcularDespidoSinCausa(asistente, fechaCese, escalasResueltas, adverte
   const diasIntegracion = diasHastaFinDeMes(fechaCese);
   const montoIntegracion = (mejorRemuneracion(asistente) / 30) * diasIntegracion;
 
-  if (anios < 1 || mesesDeAntiguedad(asistente.fecha_alta, fechaCese) < 3) {
-    advertencias.push('Antigüedad menor a 3 meses, verificar período de prueba.');
+  const umbralDias = obtenerValorEscala(escalasResueltas, 'fraccion_computable_antiguedad', 'general');
+  const umbralMeses = umbralDias !== null ? umbralDias / 30 : 3;
+  if (anios < 1 || mesesDeAntiguedad(asistente.fecha_alta, fechaCese) < umbralMeses) {
+    advertencias.push(`Antigüedad menor a ${umbralMeses} meses, verificar período de prueba.`);
   }
 
   const componentesValidos = montoAntiguedad !== null && montoPreaviso !== null;

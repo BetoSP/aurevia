@@ -314,32 +314,27 @@ CREATE TABLE ceses (
 `fecha_alta` y `tipo_vinculo` para el cálculo de antigüedad se leen de la tabla `asistentes`
 (ver más arriba), no se duplican en `ceses`.
 
-## Reclutamiento (PRD_03) — pre-Asistentes
+## Reclutamiento (PRD_03) — de `postulaciones` a `asistentes`
 
-```sql
-CREATE TABLE aspirantes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nombre TEXT NOT NULL,
-  telefono TEXT NOT NULL,
-  email TEXT NOT NULL,
-  especialidades TEXT[] NOT NULL,
-  zonas TEXT[] NOT NULL,
-  disponibilidad JSONB NOT NULL,
-  anios_experiencia SMALLINT,
-  situacion_fiscal TEXT NOT NULL,  -- monotributista_activa | se_compromete_inscribirse | otra
-  como_conocio TEXT,
-  mensaje TEXT,
-  estado TEXT DEFAULT 'pendiente', -- pendiente | en_revision | aprobado | rechazado
-  canal TEXT DEFAULT 'web',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  deleted_at TIMESTAMPTZ
-);
-```
+**Corrección (2026-07-09):** este documento describía originalmente un paso intermedio por
+una tabla `aspirantes` (`postulaciones` → `aspirantes` → `asistentes`). Esa tabla se creó en
+`schema_etapa2b.sql` pero ningún endpoint del backend llegó a leerla ni escribirla — el flujo
+realmente implementado siempre fue directo, sin paso intermedio:
 
-Cuando un `aspirante` completa las 5 etapas del Filtro prestadora-original, se promueve a `asistentes`
-(no se mezclan las dos tablas — un aspirante rechazado no debe ensuciar la tabla operativa
-de Asistentes activos).
+- `postulaciones` (Etapa 1, entrada cruda del formulario público del sitio web) — un
+  Coordinador la revisa desde el Panel.
+- Al aprobarla, `POST /api/panel/cuentas/asistente` (`backend/src/routes/panelCuentas.js`)
+  crea el registro en `asistentes` directamente a partir de la `postulacion_id`, sin crear
+  ningún registro intermedio.
+- Las 5 etapas del Proceso de Incorporación de Asistentes (Filtro prestadora-original) se registran en
+  `verificaciones_asistente`, contra `asistente_id` — no contra un aspirante.
+
+La tabla `aspirantes` (y la columna `asistentes.aspirante_id` que la referenciaba) se
+eliminaron en `schema_etapa2k.sql` por ser código muerto: quedaba vacía, con RLS que nadie
+ejercitaba, y desalineaba la documentación del flujo real. Si en el futuro se necesita un
+estado explícito "en evaluación, todavía no es Asistente" (por ejemplo al adoptar
+`docs/prestadora-original_PRD_Reclutamiento_v1.pdf` en una futura Etapa 3), evaluar recrearla en ese
+momento con el flujo real que se vaya a implementar, no reintroducir esta versión sin uso.
 
 ## Etapa 1 (Supabase/Postgres desde el día uno — sin paso intermedio por MySQL)
 
@@ -380,9 +375,9 @@ CREATE TABLE postulaciones (
 RLS activada desde la creación de ambas tablas (regla 8 de `CLAUDE.md`); el backend Express
 escribe con la Service Role Key (bypassea RLS por ser server-only), sin policies públicas de
 lectura/escritura. En Etapa 2, `postulaciones` sigue siendo la tabla de entrada cruda del
-formulario público; cuando un Coordinador la aprueba, se transforma en un registro de
-`aspirantes` — son tablas distintas con un paso de transformación, pero ya no hay migración
-de motor de base de datos de por medio.
+formulario público; cuando un Coordinador la aprueba, se crea directamente el registro de
+`asistentes` (ver sección "Reclutamiento (PRD_03)" arriba) — ya no hay migración de motor de
+base de datos de por medio.
 
 ## Diagrama de relaciones (resumen)
 
@@ -396,8 +391,10 @@ usuarios (admin, coordinador)
   │       └── (paciente_id) → alertas (N reportes → 1 análisis IA)
   ├── ausencias ── guardias_cobertura
   ├── ceses
-  ├── escalas_legales (independiente, versionado por fecha)
-  └── aspirantes (independiente hasta promoción a asistentes)
+  └── escalas_legales (independiente, versionado por fecha)
+
+postulaciones (Etapa 1, independiente) → asistentes (directo, sin tabla intermedia — ver
+  sección "Reclutamiento (PRD_03)" arriba)
 ```
 
 ## Gap sin resolver: modelo de pagos

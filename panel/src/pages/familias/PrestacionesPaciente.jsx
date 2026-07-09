@@ -41,6 +41,7 @@ export function PrestacionesPaciente({ paciente, onClose }) {
   const [precioPaquete, setPrecioPaquete] = useState('');
   const [guardandoPaquete, setGuardandoPaquete] = useState(false);
   const [errorPaquete, setErrorPaquete] = useState(null);
+  const [marcandoRevisado, setMarcandoRevisado] = useState(null);
 
   const recargar = useCallback(async () => {
     setEstado('cargando');
@@ -138,7 +139,9 @@ export function PrestacionesPaciente({ paciente, onClose }) {
   }
 
   async function handleMarcarRevisado(prestacionId) {
+    setMarcandoRevisado(prestacionId);
     await supabase.from('prestaciones').update({ requiere_revision: false }).eq('id', prestacionId);
+    setMarcandoRevisado(null);
     recargar();
   }
 
@@ -251,7 +254,7 @@ export function PrestacionesPaciente({ paciente, onClose }) {
                       </td>
                       <td>
                         {p.requiere_revision && (
-                          <Button variant="secondary" onClick={() => handleMarcarRevisado(p.id)}>
+                          <Button variant="secondary" onClick={() => handleMarcarRevisado(p.id)} disabled={marcandoRevisado === p.id}>
                             {t.prestaciones.marcar_revisado}
                           </Button>
                         )}

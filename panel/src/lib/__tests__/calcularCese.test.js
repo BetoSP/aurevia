@@ -11,6 +11,7 @@ const ESCALAS_FIXTURE = [
   { tipo: 'tope_indemnizatorio', categoria: 'general', valor: 3000000, vigencia_desde: '2026-01-01', vigencia_hasta: null },
   { tipo: 'piso_minimo_indemnizacion', categoria: 'meses', valor: 2, vigencia_desde: '2026-01-01', vigencia_hasta: null },
   { tipo: 'multiplicador_agravado', categoria: 'embarazo_matrimonio', valor: 13, vigencia_desde: '2026-01-01', vigencia_hasta: null },
+  { tipo: 'fraccion_computable_antiguedad', categoria: 'general', valor: 90, vigencia_desde: '2026-01-01', vigencia_hasta: null },
 ];
 
 function escalas(fechaHecho = '2026-07-08') {

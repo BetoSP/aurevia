@@ -479,9 +479,198 @@ redesplegados: backend (Railway, `/health` y `/api/configuracion-publica` verifi
 `curl` tras el deploy), panel y sitio-web (Vercel `--prod` + re-alias a los subdominios de
 siempre).
 
+## Actualización — Cierre de hallazgos médios/menores de la auditoría de Etapa 2 (RLS por zona, i18n, estados faltantes)
+
+Continuación de la auditoría completa de 34 ítems mencionada arriba (2026-07-08): tras
+cerrar el crítico #2 (rol Superadmin) y las 2 brechas de i18n hardcodeado ya documentadas,
+se resolvieron iterativamente el resto de los hallazgos médios/menores, hasta que una nueva
+pasada de auditoría no encontró nada más para corregir:
+
+- **RLS por zona para Coordinador** (`backend/src/db/schema_etapa2i.sql`, aplicado y
+  verificado contra Supabase real): ver detalle y alcance real (incluye lo que queda
+  deliberadamente sin resolver) en `docs/SECURITY.md`, sección RLS. También se agregó una
+  vista `asistentes_coordinador` (`security_invoker=true`) para que Coordinador nunca lea
+  columnas de sueldo/vínculo laboral vía `AsistenteDetalle.jsx` — RLS es row-level, no
+  column-level, así que la restricción de columnas se resuelve con la vista, no solo
+  ocultando tabs en el frontend. Se corrigió de paso un bug encontrado durante este trabajo:
+  `asistentes` no tenía ninguna policy de `UPDATE` para Coordinador (`PerfilTab.jsx` asumía
+  que sí podía editar, y fallaba en silencio).
+- **Postulaciones guardaba texto ya traducido en vez de códigos estables**
+  (`sitio-web/.../TrabajaConNosotrosForm.jsx`): una postulación en portugués guardaba
+  `especialidades`/`zonas`/`disponibilidad` en portugués, rompiendo cualquier filtro o
+  comparación en el Panel. Corregido para guardar siempre el código (`asistente_integral`,
+  `manana`, etc.), nunca el label ya traducido. Como el Panel necesitaba entonces traducir
+  esos códigos para mostrarlos, se construyó la infraestructura completa: helpers
+  `panel/src/lib/postulacionCodigos.js`, mapas de labels en las 3 locales
+  (`postulaciones.especialidades_labels`/`zonas_labels`/`disponibilidad_labels`/
+  `situacion_fiscal_labels`), y filtros por especialidad/zona/disponibilidad en
+  `Postulaciones.jsx` (hallazgo separado del mismo audit, relacionado).
+- **Rutas admin-only navegables por URL directa por Coordinador**: `/usuarios-panel` y
+  `/configuracion` solo estaban ocultas del nav (`Layout.jsx`), no bloqueadas por ruta.
+  `panel/src/components/layout/ProtectedRoute.jsx` ahora acepta un prop `soloAdmin`,
+  aplicado a ambas rutas en `App.jsx`.
+- **Simulador de Vínculo con fallback de sueldo inventado**
+  (`SimuladorVinculoTab.jsx`): si al Asistente le faltaba `valor_hora`/`sueldo_basico`, el
+  simulador completaba con un número de referencia hardcodeado (contradice el espíritu de
+  la regla 1/10 — es un monto monetario que alimenta una proyección de riesgo legal). Ahora
+  la fila muestra explícitamente "Falta cargar el dato en Perfil" en vez de un monto
+  inventado.
+- **Estado "no encontrado" ausente** en `FamiliaDetalle.jsx` y `AsistenteDetalle.jsx`: un
+  ID inexistente mostraba el mismo error genérico que una falla de red real. Se distingue
+  ahora el código `PGRST116` de PostgREST ("no rows") de un error genuino, con un estado
+  `no_encontrado` propio (regla 3).
+- **Botones sin deshabilitar durante operación en curso** (regla 5): el checkbox "activa"
+  de Zonas en `Configuracion.jsx` y el botón "marcar revisado" por Prestación en
+  `PrestacionesPaciente.jsx` permitían doble click/doble submit.
+- **Teléfonos como `tel:` en vez de `wa.me`**: `SolicitudDetalle.jsx`, `Solicitudes.jsx`,
+  `FamiliaDetalle.jsx` usaban links `tel:` — convención documentada de `DESIGN_SYSTEM.md`
+  exige siempre WhatsApp. Nuevo helper `panel/src/lib/telefono.js` (`linkWhatsapp`).
+- **Falta la clase CSS `.panel-explicacion`**: usada en varias pantallas, nunca definida en
+  `index.css` — agregada (solo variables del sistema, regla 6).
+- **`<html lang="en">` en el Panel**: corregido a `lang="es-AR"` (regla 11/accesibilidad).
+- **Tab "Ausencias y Cobertura" vetada a Coordinador sin motivo real**: no tiene datos
+  laborales sensibles y ya tiene RLS de zona (ver arriba) — se agregó a
+  `TABS_COORDINADOR` en `AsistenteDetalle.jsx`, cerrando la inconsistencia entre lo que el
+  backend ya permitía y lo que el frontend mostraba.
+- **`SolicitaServicioForm.jsx` alineaba el label del tipo de servicio por índice posicional**
+  contra `t.servicios.items[i]` en vez de por código — si algún día se reordena uno de los
+  dos arrays (el de códigos del formulario o el de `items` de `translations.js`) sin tocar
+  el otro, el label mostrado quedaría desalineado con el valor real enviado, en silencio. Se
+  agregó un campo `codigo` a cada entrada de `servicios.items` (3 locales,
+  `sitio-web/src/i18n/translations.js`) y el formulario ahora busca por
+  `items.find(item => item.codigo === tipo)` en vez de por índice.
+- **Bug de regresión detectado durante la verificación de esta sesión**: al agregar
+  `fraccion_computable_antiguedad` a `escalas_legales` (parte del trabajo de RLS de zona
+  de más arriba), el fixture congelado de `calcularCese.test.js`
+  (`panel/src/lib/__tests__/calcularCese.test.js`) no se actualizó con la fila nueva —
+  `npx vitest run` empezó a fallar (redondeo de antigüedad LCT art. 245 daba 3 años en vez
+  de 4, porque `obtenerValorEscala` devolvía `null` para el umbral y la función salteaba el
+  redondeo por fracción). Se agregó la fila faltante al fixture (valor 90 días, igual que el
+  seed real de `schema_etapa2i.sql`); los 18 tests vuelven a pasar.
+- **Auditoría de claves i18n huérfanas del Panel**: comparación programática de las 326
+  claves hoja de `T['es-AR']` contra su uso en `panel/src/**`. La mayoría de los "sin uso"
+  detectados por grep literal resultaron ser falsos positivos (acceso dinámico por template
+  string, ej. `t.postulaciones[\`estado_${estado}\`]`, `t.asistentes.ausencias[\`tipo_${tipo}\`]`)
+  — se verificaron uno por uno antes de tocar nada. Se confirmaron y eliminaron 3 claves
+  realmente muertas (sin ningún uso, ni literal ni dinámico) en las 3 locales:
+  `postulaciones.cambiar_estado`, `postulaciones.email_enviado`, `solicitudes.cambiar_estado`
+  (`PostulacionDetalle.jsx`/`SolicitudDetalle.jsx` ya usan `t.postulaciones.confirmar_cambio_estado`
+  y notifican por email sin mostrar un mensaje de confirmación aparte).
+
+**Deliberadamente fuera de alcance de esta sesión (deuda técnica documentada, no bugs)**:
+
+- **"Vista mapa" de Postulaciones** (`PRD_02_Panel_Admin.md`, Módulo 2: "Vista mapa con
+  Asistentes del plantel activo agrupados por zona"): requiere infraestructura de
+  geolocalización/mapas que no existe hoy en el Panel. Confirmado como requisito real de
+  PRD, no un falso positivo de auditoría — queda pendiente para cuando se defina esa
+  infraestructura (probablemente junto con GPS de la PWA de Asistentes, Etapa 3).
+- **"Asignar Asistente" desde Solicitudes** (`PRD_02_Panel_Admin.md`, Módulo 3): confirmado
+  vía grep que `solicitudes` no tiene columna `asistente_id` en ningún schema — asignar un
+  Asistente a una Solicitud (por zona + especialidad + disponibilidad) requiere una decisión
+  de modelo de datos (¿se asigna a nivel Solicitud, o recién al convertirse en Guardia real
+  en el futuro Módulo 6?) que no corresponde tomar sin el usuario. Mismo criterio que el
+  gap de zona de `solicitudes`/`familias` de `SECURITY.md`.
+- **Módulo 8 (Configuración) construido con una estructura distinta a la enumerada en
+  `PRD_02_Panel_Admin.md`** (el PRD no traía tabla de datos definida para este módulo, a
+  diferencia del Módulo 4 — ver la entrada "Módulo 8 completo" más arriba, que ya documenta
+  que se diseñó un esquema nuevo desde cero por decisión explícita). Se revisó de nuevo en
+  esta auditoría y se confirma que la reorganización (3 tabs: Empresa/Zonas/Notificaciones,
+  en vez de una lista plana de settings) es una decisión de diseño ya tomada y funcional,
+  no una desviación accidental — no amerita más cambio que dejarlo señalado acá para que
+  quede claro que se revisó a propósito.
+
+**Verificado**: `npm run build` de `panel/` y `sitio-web/` sin errores; `npx vitest run`
+18/18 (tras el fix del fixture); paridad de claves i18n entre es-AR/en/pt-BR revisada a
+mano en cada bloque tocado.
+
+## Actualización — Auditoría exhaustiva de todo el código (backend + panel + sitio-web) y cierre de los 2 hallazgos arquitectónicos pendientes
+
+Continuación literal, archivo por archivo, de la auditoría de arriba (a pedido explícito del
+usuario: "absolutamente TODO el código", no una muestra). Se revisó `backend/src` completo
+(incluye los 2 archivos de schema que faltaban, `schema_etapa2h.sql` y `schema_etapa2i.sql`),
+y se delegó la revisión exhaustiva de `panel/src` y `sitio-web/src`. Hallazgos y cierres
+(2026-07-09):
+
+- **RLS de `asistentes` sin restricción por columna para Coordinador** (crítico):
+  `schema_etapa2i.sql` le da a Coordinador `UPDATE` sobre los Asistentes de su zona a nivel de
+  fila, pero Postgres RLS es row-level, no column-level — nada impedía que un Coordinador
+  editara `sueldo_basico`, `valor_hora`, `causal_baja`, vencimientos, etc. desde una llamada
+  directa a la API de Supabase (el frontend, `PerfilTab.jsx`, ya ocultaba esos campos, pero
+  eso es UI, no seguridad). Cerrado con `backend/src/db/schema_etapa2j.sql` (nuevo, aplicado
+  y verificado contra Supabase real): trigger `BEFORE UPDATE` que rechaza el UPDATE si
+  un Coordinador intenta tocar cualquiera de las columnas laborales sensibles (regla 8 de
+  `CLAUDE.md`).
+- **Label "Email" hardcodeado** en `panel/src/pages/UsuariosPanel.jsx` (regla 1) — corregido a
+  `t.usuarios_panel.col_email` (clave nueva en es-AR/en/pt-BR).
+- **Botón "Borrar" de Zonas sin `disabled` durante la operación** en
+  `panel/src/pages/Configuracion.jsx` (regla 5) — corregido.
+- **Glosario**: 14 ocurrencias de "Caregiver" sobrevivían en el locale `en` de
+  `panel/src/i18n/translations.js` (pt-BR ya estaba limpio); 7 ocurrencias de
+  "caregiver"/"cuidador" en `en`/`pt-BR` de `sitio-web/src/i18n/translations.js` (es-AR ya
+  estaba limpio) — corregidas a "Integral Assistant" / "Assistente Integral". Verificado con
+  grep, cero ocurrencias remanentes.
+- **Service worker del sitio público nunca instalaba**: `sitio-web/src/middleware.js`
+  redirigía `/offline.html` a `/es-AR/offline.html` (404), y `public/sw.js` hace
+  `cache.addAll()` de esa URL en el evento `install` — cualquier fallo en `addAll` aborta la
+  instalación completa del SW. Se agregó `sw.js` y `offline.html` al matcher de exclusión del
+  middleware.
+- **CSS muerto**: bloque `.filtro-timeline`/`.filtro-etapa`/etc. en
+  `sitio-web/src/styles/components.css`, remanente de cuando se sacó "El Filtro prestadora-original" del
+  sitio público (sesión anterior) — eliminado, confirmado por grep que ningún componente lo
+  usaba.
+- **Tabla `aspirantes` muerta** (hallazgo arquitectónico): `docs/DATA_MODEL.md` documentaba el
+  flujo `postulaciones → aspirantes → asistentes`, pero ningún endpoint del backend leía ni
+  escribía `aspirantes` — el flujo real siempre fue directo
+  (`POST /api/panel/cuentas/asistente` crea el Asistente desde la `postulacion_id`, sin paso
+  intermedio). Se eliminó la tabla (y la columna `asistentes.aspirante_id`) en
+  `backend/src/db/schema_etapa2k.sql` (nuevo, aplicado y verificado contra Supabase real —
+  incluyó redefinir la vista `asistentes_coordinador`, que seleccionaba `aspirante_id`
+  explícitamente y no dejaba dropear la columna sin antes hacer `DROP VIEW` +
+  `CREATE VIEW`), y se corrigió `docs/DATA_MODEL.md`/`docs/SECURITY.md` para documentar el
+  flujo real en vez del flujo nunca implementado.
+- **Notificaciones de vencimiento no implementadas** (hallazgo arquitectónico):
+  `docs/PRD_02B_Gestion_Personal.md` función 9 ("Notificaciones de vencimientos: monotributo,
+  ART, seguro") estaba documentada pero `configuracion_notificaciones` solo tenía 2 de los
+  eventos esperados, y no existía ningún cron/scheduler en el backend pese a que
+  `asistentes.vencimiento_monotributo/vencimiento_art/vencimiento_seguro` existen desde
+  Etapa 2B. Se implementó `backend/src/utils/vencimientos.js` (revisa diariamente, vía
+  `setInterval` en `server.js` + corrida al arrancar, sin agregar dependencia nueva de cron)
+  Asistentes activos con alguno de los 3 vencimientos ya vencido o dentro de 30 días, y avisa
+  por `enviarEmailCoordinador` con un evento por tipo. Se agregó
+  `backend/src/db/schema_etapa2l.sql` (nuevo, aplicado y verificado contra Supabase real)
+  para sembrar los 3 eventos nuevos en `configuracion_notificaciones`, con sus labels en las 3
+  locales del Panel. Deliberadamente sin deduplicación de avisos ya enviados (se re-avisa en
+  cada corrida diaria mientras el vencimiento siga en la ventana) — el PRD no pide lo
+  contrario y una tabla de "ya avisado" hubiera sido una abstracción no pedida.
+- **Nuevo documento agregado por el usuario**: `docs/prestadora-original_PRD_Reclutamiento_v1.pdf` — PRD
+  mucho más rico para el proceso de Reclutamiento (6 etapas en vez de 5, formulario con
+  DNI/CUIL/foto con detección facial/experiencia clínica detallada/Maps, panel con mapa
+  geolocalizado, capacitación con examen de 20 preguntas y certificado QR, infra nueva:
+  Twilio SMS, Resend/SendGrid). Usa terminología que viola el glosario ("Cuidadora" en vez de
+  "Asistente Integral") y menciona nombres reales (mismo tipo de conflicto ya documentado para
+  `Prompt de Money Suite.md` en `CLAUDE.md`). Decisión del usuario: adoptar su contenido más
+  adelante corrigiendo la terminología, en una sesión dedicada de rediseño de Etapa 3 — no
+  ahora. **No se tocó ningún PRD ni se implementó nada de este documento en esta sesión.**
+
+`schema_etapa2j.sql`, `schema_etapa2k.sql` y `schema_etapa2l.sql` se aplicaron y verificaron
+contra Supabase real en esta misma sesión (conexión directa vía cadena de conexión Postgres,
+no vía SQL Editor manual — script de una sola vez, borrado después de usarse).
+
+**Verificado**: `npm run build` de `panel/` y `sitio-web/` sin errores; `npx vitest run`
+18/18 en `panel/`; las 3 migraciones nuevas corrieron sin error contra la base real.
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
+
+- **Zona de `solicitudes`/`familias`/`pacientes`/`prestaciones` no filtrada por Coordinador**
+  (ver `docs/SECURITY.md`, sección RLS) — no hay columna de zona real en estas tablas
+  (`solicitudes.localidad` es texto libre). Pendiente de una decisión de producto sobre cómo
+  derivar la zona antes de poder escribir la policy.
+- **"Vista mapa" (Postulaciones) y "Asignar Asistente" (Solicitudes)** — ver detalle arriba,
+  ambos son requisitos reales de `PRD_02_Panel_Admin.md` no construidos en este corte,
+  requieren infraestructura/decisiones de modelo de datos que no corresponde tomar sin el
+  usuario.
 
 - Las 15 filas seed de `escalas_legales` en `schema_etapa2b.sql` están marcadas
   explícitamente `'PLACEHOLDER — validar con abogado laboralista'` — son valores de ejemplo
@@ -492,6 +681,31 @@ _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
 - El diseño visual/formato del certificado (PDF descargable con membrete, etc.) no está
   definido en ningún PRD — el corte actual solo genera el QR como imagen PNG descargable,
   sin un layout de certificado imprimible. Queda para cuando haya spec de diseño.
+- `docs/prestadora-original_PRD_Reclutamiento_v1.pdf` (agregado por el usuario, 2026-07-09): PRD de
+  Reclutamiento más rico que el actual `PRD_03_Reclutamiento.md`, pero con terminología que
+  viola el glosario ("Cuidadora") y nombres reales — mismo tratamiento que
+  `Prompt de Money Suite.md` (ver nota en `CLAUDE.md`). Adoptar su contenido, corrigiendo
+  terminología, en una futura sesión dedicada de rediseño de Etapa 3 — no forma parte del
+  alcance de ninguna etapa actual de `BUILD_ORDER.md` todavía.
+- **TAREA ASIGNADA AL USUARIO — "El Filtro prestadora-original" usado como si fuera público en
+  `docs/prestadora-original_Fundacional_v3.pdf`** (detectado 2026-07-09): el PDF lo propone como ejemplo
+  de post de Instagram (sección 5.3), lo cual contradice la corrección ya aplicada en
+  `CLAUDE.md` el 2026-07-08. Aclaración (no es un cambio de nombre, son dos términos que
+  conviven según el contexto — ver glosario en `CLAUDE.md`): "El Filtro prestadora-original" sigue siendo
+  el nombre correcto para la referencia interna general al concepto (nunca público); dentro
+  del Panel, esa misma pantalla se llama "Proceso de Incorporación de Asistentes" (no "Filtro
+  prestadora-original" ahí). En el HTML (`prestadora-original_Manual_Identidad_v1.html`) ya se corrigió la tabla de
+  terminología para reflejar ambos términos correctamente. **El usuario se encarga
+  personalmente de** corregir el ejemplo de post de Instagram en
+  `docs/prestadora-original_Fundacional_v3.pdf` (no editable por Claude) para que no proponga "Filtro
+  prestadora-original" como contenido público.
+- **TAREA ASIGNADA AL USUARIO — conflicto de tipografía entre `prestadora-original_Fundacional_v3.pdf` y
+  `prestadora-original_Manual_Identidad_v1.html`** (detectado 2026-07-09): el PDF (pág. 2) dice
+  "Tipografía: Arial"; el HTML y `docs/DESIGN_SYSTEM.md` (ya implementado en panel/sitio-web)
+  usan Playfair Display + DM Sans. Se definió que **el HTML tiene preeminencia sobre el PDF**
+  en todo lo referido a identidad de marca — el PDF quedó desactualizado en ese punto. El
+  usuario se encarga de corregir la tabla de tipografía en `docs/prestadora-original_Fundacional_v3.pdf`
+  (no editable por Claude) para que no quede como fuente contradictoria en futuras sesiones.
 
 ## Archivos creados/modificados por sesión
 
@@ -499,6 +713,8 @@ _Una entrada por sesión de trabajo, más reciente primero._
 
 | Fecha | Sesión | Archivos |
 |---|---|---|
+| 2026-07-09 | Auditoría exhaustiva de TODO el código (backend + panel + sitio-web, archivo por archivo) y cierre de los 8 hallazgos encontrados (RLS por columna en `asistentes`, label hardcodeado, botón sin disabled, glosario en panel y sitio-web, service worker roto, CSS muerto, tabla `aspirantes` muerta, notificaciones de vencimiento faltantes), con las 3 migraciones nuevas aplicadas y verificadas contra Supabase real, + nota sobre `prestadora-original_PRD_Reclutamiento_v1.pdf` (input para una futura Etapa 3, no implementado ahora) | `backend/src/db/schema_etapa2j.sql` (nuevo, aplicado — trigger RLS columnas laborales), `schema_etapa2k.sql` (nuevo, aplicado — DROP TABLE aspirantes + redefinición de vista `asistentes_coordinador`), `schema_etapa2l.sql` (nuevo, aplicado — seed 3 eventos de vencimiento); `backend/src/utils/vencimientos.js` (nuevo); `backend/src/server.js` (revisión diaria de vencimientos); `panel/src/pages/UsuariosPanel.jsx`, `panel/src/pages/Configuracion.jsx`, `panel/src/i18n/translations.js` (glosario en + labels de vencimiento en es-AR/en/pt-BR); `sitio-web/src/middleware.js`, `sitio-web/src/i18n/translations.js` (glosario en/pt-BR), `sitio-web/src/styles/components.css` (CSS muerto); `docs/DATA_MODEL.md`, `docs/SECURITY.md` (flujo real sin `aspirantes`); `docs/PROGRESS.md` (esta entrada) |
+| 2026-07-08 | Cierre iterativo de hallazgos médios/menores de la auditoría de Etapa 2 (RLS por zona, códigos estables de postulación, rutas admin-only, estados faltantes, botones sin disabled, wa.me, tab de Ausencias para Coordinador, fix de índice posicional en formulario público, fix de fixture de test, i18n huérfano) | `backend/src/db/schema_etapa2i.sql` (nuevo, aplicado y verificado contra Supabase real — vista `asistentes_coordinador` + RLS de zona en 6 tablas); `backend/src/db/schema_etapa2d.sql` (comentario, glosario); `panel/src/lib/{telefono,postulacionCodigos,roles}.js`, `panel/src/index.css`, `panel/index.html`, `panel/src/i18n/translations.js`, `panel/src/pages/{Postulaciones,PostulacionDetalle,SolicitudDetalle,Solicitudes}.jsx`, `panel/src/pages/familias/{FamiliaDetalle,PrestacionesPaciente}.jsx`, `panel/src/pages/asistentes/{AsistenteDetalle,SimuladorVinculoTab,AusenciasCoberturaTab}.jsx`, `panel/src/pages/Configuracion.jsx`, `panel/src/components/layout/ProtectedRoute.jsx`, `panel/src/App.jsx`, `panel/src/lib/__tests__/calcularCese.test.js` (fixture); `sitio-web/src/i18n/translations.js` (campo `codigo` en `servicios.items`), `sitio-web/src/app/[locale]/trabaja-con-nosotros/TrabajaConNosotrosForm.jsx` (códigos estables), `sitio-web/src/app/[locale]/solicita-servicio/SolicitaServicioForm.jsx` (fix índice posicional); `docs/SECURITY.md` (estado real de RLS de zona); `docs/PROGRESS.md` (esta entrada) |
 | 2026-07-08 | Módulo 8 completo (Configuración: empresa, zonas de cobertura, notificaciones) + sitio público conectado al dato real | `backend/src/db/schema_etapa2h.sql` (nuevo, aplicado y verificado contra Supabase real); `backend/src/routes/{panelConfiguracion,configuracionPublica}.js` (nuevos); `backend/src/utils/email.js` (destinatarios por evento); `backend/src/routes/{postulacionAsistente,solicitudServicio}.js` (pasan `evento`); `backend/src/server.js` (2 rutas montadas); `panel/src/pages/Configuracion.jsx` (nuevo); `panel/src/App.jsx` (ruta `/configuracion`); `panel/src/components/layout/Layout.jsx` (link de nav); `panel/src/i18n/translations.js` (bloque `configuracion` + `nav.configuracion` + `comun.borrar` en es-AR/en/pt-BR); `sitio-web/src/lib/configuracionPublica.js` (nuevo); `sitio-web/src/app/[locale]/layout.jsx`, `sitio-web/src/app/[locale]/contacto/page.jsx`, `sitio-web/src/app/[locale]/trabaja-con-nosotros/{page,TrabajaConNosotrosForm}.jsx`, `sitio-web/src/components/WhatsAppButton.jsx` (consumen el endpoint público en vez de `siteConfig.js`) |
 | 2026-07-08 | Auditoría completa de Etapas 1 y 2 contra sus PRD (a pedido explícito del dueño del proyecto antes de arrancar Etapa 3) y cierre de las 3 brechas encontradas: (1) textos hardcodeados en el formulario de postulación de Asistentes, (2) rol Superadmin implementado de punta a punta (antes solo documentado), (3) creación de 4 cuentas de prueba con un rol cada una (Superadmin, Admin, Familia="Alberto", Asistente="Beto"), todas con la misma contraseña. También se sacó "El Filtro prestadora-original" del sitio público (nav, home, página `/el-filtro`) y se simplificó la copy de zona de cobertura del hero a "AMBA" | `sitio-web/src/config/siteConfig.js`, `sitio-web/src/i18n/translations.js`, `sitio-web/src/app/[locale]/trabaja-con-nosotros/TrabajaConNosotrosForm.jsx` (fix i18n); `backend/src/db/schema_etapa2g.sql` (nuevo, aplicado contra Supabase real — agrega `superadmin` al CHECK de `usuarios.rol` y a todas las policies RLS que exigían `admin`); `backend/src/middleware/requiereRolPanel.js`, `backend/src/routes/panelUsuarios.js` (Superadmin gestiona cuentas de Admin/Superadmin, Admin sigue limitado a Coordinador); `panel/src/lib/roles.js` (nuevo, helper `esAdminOSuperior`); `panel/src/components/layout/{Layout,ProtectedRoute}.jsx`, `panel/src/pages/{ListaPrecios,PostulacionDetalle,SolicitudDetalle,UsuariosPanel,asistentes/AsistenteDetalle,asistentes/PerfilTab}.jsx`, `panel/src/i18n/translations.js` (claves `rol_superadmin`, `nuevo_usuario`, `campo_rol` en es-AR/en/pt-BR) |
 | 2026-07-08 | Aplicar SQL contra Supabase real y deploy del Panel a producción | `backend/src/db/{schema_etapa2e,schema_etapa2f}.sql` (aplicados y verificados contra Supabase real); `panel/vercel.json` (nuevo, rewrite SPA); `panel/.gitignore` (excluye `.vercel`) |
