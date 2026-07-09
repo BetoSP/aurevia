@@ -21,6 +21,16 @@
   no un extra opcional. Esto pesa a favor de priorizar antes de lo previsto algunos de los
   niveles de IA que `BUILD_ORDER.md` marca hoy como "Diferida" — a revisar caso por caso
   cuando se llegue a esa etapa, no se re-prioriza automáticamente sin evaluar cada nivel.
+- **Cambio societario (2026-07-09): el software pasa a ser propiedad de PLM Systems**, que
+  lo licencia como SaaS a cualquier prestadora de cuidado domiciliario (prestadora-original es la
+  primera). prestadora-original sigue con su negocio de cuidado domiciliario y suma un servicio B2B de
+  auditoría/certificación a otras prestadoras. El plan técnico completo (entidad
+  `prestadoras`, aislamiento multi-tenant, roles nuevos, facturación dual PLM/prestadora-original,
+  i18n y multi-moneda desde el arranque, residencia de datos a futuro) está en
+  `docs/Prompt_Claude_Code_PLM_Multitenant.md` — ver también `CLAUDE.md`. **Nada de esto
+  está implementado todavía**: el sistema sigue siendo mono-tenant (una sola organización,
+  prestadora-original) en producción. No empezar la implementación sin el inventario/plan previo que
+  pide ese documento y sin aprobación explícita del usuario.
 
 ## Roles de usuario
 
@@ -39,6 +49,12 @@ más permiso técnico pueda operar sin exponer ese poder a un Admin de negocio "
 
 Ningún rol de Asistente/Familia debe tener acceso, ni siquiera de solo lectura, a
 `escalas_legales`, `ceses`, `ausencias` ni a datos laborales internos de otros Asistentes.
+
+Roles futuros, no implementados todavía (ver `docs/Prompt_Claude_Code_PLM_Multitenant.md`):
+"Administrador de prestadora" (acceso acotado a los datos de su propia prestadora, cero
+visibilidad de otras) y, más adelante, un rol de solo lectura agregada para financiadores
+(obras sociales/prepagas). No diseñar código para estos roles sin que se apruebe
+explícitamente entrar en la etapa de multi-tenancy.
 
 ## Stack por etapa
 
@@ -191,3 +207,6 @@ construir cualquier flujo de cobro, esto necesita una decisión de negocio expl�
 - v1 (2026-07-07): primera versión, generada para poblar `Workspace/docs/` a partir de
   la lectura completa de la documentación del proyecto y separando lo vinculante de lo
   que no lo es.
+- v2 (2026-07-09): se documenta el cambio societario PLM Systems / prestadora-original y la dirección
+  de multi-tenancy futura (ver `docs/Prompt_Claude_Code_PLM_Multitenant.md`), sin
+  implementar nada todavía.

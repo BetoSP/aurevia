@@ -16,6 +16,7 @@
 | 6 | Perfil público del Asistente con QR verificable | Asistentes certificados | 1 semana | `PRD_04_05_App_Servicio.md` |
 | Diferida | App nativa (Capacitor o React Native) | 50+ familias activas, negocio validado | 1-5 semanas | — |
 | Diferida | IA Niveles 3-5 (matching, asistente virtual, análisis predictivo) | Datos históricos suficientes | Variable | — |
+| Diferida | Multi-tenancy real (entidad `prestadoras`, aislamiento por organización, roles y facturación PLM/prestadora-original) | Negocio de PLM Systems formalizado + al menos un cliente licenciatario más allá de prestadora-original; empieza por el inventario/plan que pide el documento, no por código | Variable | `docs/Prompt_Claude_Code_PLM_Multitenant.md` |
 
 El reclutamiento (`PRD_03_Reclutamiento.md`) no es una etapa de código separada — sus
 pantallas y formularios se reparten entre Etapa 1 (formulario público de postulación) y

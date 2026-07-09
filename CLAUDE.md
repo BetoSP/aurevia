@@ -11,6 +11,25 @@ Conecta familias con Asistentes Integrales verificados. Modelo que empieza como 
 directa y evoluciona hacia marketplace + B2B. Es la única división en desarrollo (de 6
 planificadas en prestadora-original Group).
 
+**Cambio de estructura societaria (2026-07-09):** el software deja de ser propiedad de
+prestadora-original Salud. Pasa a haber dos empresas: **PLM Systems** es la dueña del software y lo
+licencia como producto SaaS — no solo a prestadora-original, sino potencialmente a cualquier prestadora
+de cuidado domiciliario, dentro y fuera de Argentina. **prestadora-original** sigue con su negocio de
+cuidado domiciliario (directo + marketplace) y, además, le vende a otras prestadoras un
+servicio B2B de auditoría/certificación apoyado en la tecnología que le licencia a PLM,
+pagando como cualquier otro cliente. Consecuencia técnica: el sistema tiene que evolucionar
+de mono-tenant (una sola organización, prestadora-original) a **multi-tenant real**, donde cada
+prestadora licenciataria — incluida la propia prestadora-original — es un cliente aislado. El plan
+técnico completo de esa migración está en `docs/Prompt_Claude_Code_PLM_Multitenant.md`.
+**Estado actual: solo documentado, nada de esto está implementado en código todavía** — el
+sistema sigue siendo mono-tenant (prestadora-original) en producción; el multi-tenant es la próxima
+etapa grande a acometer, empezando por el inventario/plan que pide ese documento, no por
+código directo. Ver también `docs/CONTEXT.md` y `docs/BUILD_ORDER.md`.
+
+Mientras tanto: "prestadora-original Salud" sigue siendo la marca correcta en todo lo que describe el
+negocio de cuidado domiciliario en sí (nav, login, footer-brand, PDFs de RRHH). Solo la
+titularidad/copyright del software cambia a PLM Systems — ver el glosario abajo.
+
 ## El riesgo legal que condiciona el diseño (leer antes de tocar cualquier flujo de Asistente)
 
 Los Asistentes son monotributistas independientes, no empleados. El art. 23 LCT presume
@@ -50,6 +69,8 @@ reproponer sin resolver primero el riesgo legal de fondo.
 | Vínculo / Cese | contrato de trabajo, despido (salvo causal literal de despido) |
 | Inversor | nombre propio del socio potencial (no confirmado) |
 | Superadmin | rol técnico, login propio, distinto de Admin — no confundir ni fusionar con Admin en código ni en UI |
+| PLM Systems | dueña/licenciante del software — usar solo para titularidad/copyright del software, nunca como marca del negocio de cuidado domiciliario |
+| Prestadora | empresa licenciataria del software (prestadora-original es la primera) — en el modelo de datos futuro, "organización"/tenant. No confundir con "Familia" ni con "Asistente" |
 
 Esto aplica a nombres de variables, tablas, componentes y claves de i18n, no solo a texto visible.
 
@@ -113,6 +134,19 @@ Al iniciar cualquier sesión de trabajo en este repo:
    Última tarea completada: [Y]. Tarea de esta sesión: [Z]."*
 7. Mostrar el plan de la tarea y esperar aprobación antes de escribir código.
 8. Al terminar, actualizar `docs/PROGRESS.md`.
+
+## Sobre `docs/Prompt_Claude_Code_PLM_Multitenant.md`
+
+Es el prompt que define la dirección de arquitectura para el cambio societario descripto
+arriba (PLM Systems como dueña/licenciante del software, multi-tenant real por prestadora).
+**A diferencia de "Prompt de Money Suite.md" (ver abajo), este sí es vinculante** — refleja
+una decisión de negocio ya tomada, no un documento de referencia genérico. Pero su propio
+texto pide explícitamente no escribir código todavía: primero un inventario de qué partes
+del código asumen hoy "una sola organización" (prestadora-original), y una propuesta de plan de
+migración y diseño de la entidad `prestadoras` — recién después de discutir y aprobar eso
+se empieza a tocar código de producción. No arrancar la implementación de multi-tenancy sin
+ese paso previo ni sin confirmación explícita del usuario de que se está entrando a esa
+etapa.
 
 ## Sobre "Prompt de Money Suite.md"
 

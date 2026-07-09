@@ -916,6 +916,47 @@ confirmar con el usuario** — podría eventualmente implicar revisar `CLAUDE.md
 textos legales de `privacidad`/`terminos`), pero eso no se decidió todavía, solo se pidió el
 cambio puntual del copyright.
 
+**Resuelto en la sesión siguiente (2026-07-09, continuación):** el usuario confirmó la
+ortografía exacta ("PLM Systems", con "y") y el alcance (footer + revisar `terminos`/
+`privacidad`). Se cambió `sitio-web/src/components/Footer.jsx` (commit `beb23ec`); se
+revisaron `terminos/page.jsx` y `privacidad/page.jsx` y son placeholders sin texto legal
+real todavía, así que no había nada más que tocar ahí — cuando se redacte el contenido
+legal real de esas páginas, debe nombrar a PLM Systems como titular del software.
+
+## Actualización — Documentación alineada con el prompt de arquitectura multi-tenant (PLM Systems)
+
+El usuario agregó `docs/Prompt_Claude_Code_PLM_Multitenant.md` (prompt completo pensado
+para dársela a una futura sesión de Claude Code como kickoff de la migración a
+multi-tenancy) y pidió alinear la documentación existente con ese nuevo documento — no
+implementar nada de lo que el prompt describe, solo dejar la documentación consistente.
+
+Cambios de documentación (sin tocar código de producto):
+
+- `CLAUDE.md`: sección "Qué es esto" ahora explica el cambio societario (PLM Systems dueña
+  del software / prestadora-original cliente + negocio de auditoría B2B) y linkea al nuevo prompt;
+  se agregaron dos filas al glosario obligatorio ("PLM Systems", "Prestadora"); se agregó
+  una sección nueva "Sobre `docs/Prompt_Claude_Code_PLM_Multitenant.md`" aclarando que, a
+  diferencia de "Prompt de Money Suite.md", este sí es vinculante como dirección de
+  negocio, pero que el propio documento pide inventario + plan antes de escribir código de
+  producción — no arrancar la implementación sin ese paso ni sin aprobación explícita.
+- `docs/CONTEXT.md`: nueva entrada en "Modelo de negocio" describiendo el cambio societario
+  y remitiendo al prompt; nota en "Roles de usuario" sobre los roles futuros ("Administrador
+  de prestadora", financiador de solo lectura) que no hay que implementar todavía; entrada
+  en el changelog del documento (v2).
+- `docs/BUILD_ORDER.md`: nueva fila "Diferida" para "Multi-tenancy real" que referencia el
+  documento y deja explícito que la condición de entrada es negocio de PLM Systems
+  formalizado + al menos un cliente licenciatario además de prestadora-original, y que empieza por el
+  inventario/plan, no por código.
+
+**Estado real del producto: sin cambios.** El sistema sigue siendo mono-tenant (una sola
+organización, prestadora-original) en producción — esto fue puramente un trabajo de alineación de
+documentación. El propio `Prompt_Claude_Code_PLM_Multitenant.md` pide, como primer paso
+real de esa migración, un inventario de qué partes del código asumen hoy "una sola
+organización" y una propuesta de plan de migración — eso no se hizo en esta sesión y
+requiere kickoff explícito del usuario para arrancar (es un cambio arquitectónico grande:
+entidad `prestadoras`, RLS por tenant, roles nuevos, facturación dual PLM/prestadora-original, i18n y
+multi-moneda).
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
