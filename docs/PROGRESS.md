@@ -718,12 +718,15 @@ _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
 - El diseño visual/formato del certificado (PDF descargable con membrete, etc.) no está
   definido en ningún PRD — el corte actual solo genera el QR como imagen PNG descargable,
   sin un layout de certificado imprimible. Queda para cuando haya spec de diseño.
-- `docs/prestadora-original_PRD_Reclutamiento_v1.pdf` (agregado por el usuario, 2026-07-09): PRD de
-  Reclutamiento más rico que el actual `PRD_03_Reclutamiento.md`, pero con terminología que
-  viola el glosario ("Cuidadora") y nombres reales — mismo tratamiento que
-  `Prompt de Money Suite.md` (ver nota en `CLAUDE.md`). Adoptar su contenido, corrigiendo
-  terminología, en una futura sesión dedicada de rediseño de Etapa 3 — no forma parte del
-  alcance de ninguna etapa actual de `BUILD_ORDER.md` todavía.
+- ~~`docs/prestadora-original_PRD_Reclutamiento_v1.pdf`: adoptar su contenido en `PRD_03_Reclutamiento.md`~~
+  **Resuelto (2026-07-09)**: se comparó sección por sección contra `PRD_03_Reclutamiento.md`
+  existente. La mayoría del contenido ya estaba condensado y corregido de una pasada
+  anterior; faltaba solamente la sección de landing page pública (perfiles buscados,
+  beneficios, zonas) y quedaba sin corregir un uso de "Cuidadora Domiciliaria" en el catálogo
+  de especialidades de la Sección C del formulario. Ambos corregidos directamente en
+  `PRD_03_Reclutamiento.md` — ver su nota de cabecera para el detalle completo de las 5
+  correcciones aplicadas. Sección 8 del original ("prestadora-original vs. CUIDARLOS") y alianza
+  institucional con terceros quedan fuera de alcance (decisión de negocio/marketing).
 - **TAREA ASIGNADA AL USUARIO — "El Filtro prestadora-original" usado como si fuera público en
   `docs/prestadora-original_Fundacional_v3.pdf`** (detectado 2026-07-09): el PDF lo propone como ejemplo
   de post de Instagram (sección 5.3), lo cual contradice la corrección ya aplicada en

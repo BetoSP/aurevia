@@ -1,11 +1,19 @@
 # PRD_03 — Reclutamiento (Sitio de Captación + Postulación + Verificación)
 
-> Fuente: `prestadora-original_PRD_Reclutamiento_v1_extracted.txt`. Condensado para ejecución directa,
-> con dos correcciones respecto del original: (1) el original menciona un nombre propio
-> ("Alberto Sánchez") como responsable de entrevistas — reemplazado por "Inversor" o
-> "Admin", igual que en el resto de `Workspace/docs/`, ver nota del glosario en `CLAUDE.md`;
-> (2) se documenta explícitamente una discrepancia de stack, ver sección "Nota de stack"
-> abajo, en vez de elegir en silencio.
+> Fuente: `docs/prestadora-original_PRD_Reclutamiento_v1.pdf` (v1.0, Mayo 2026). Condensado para
+> ejecución directa, con las siguientes correcciones respecto del original: (1) el original
+> menciona un nombre propio ("Alberto Sánchez") como responsable de entrevistas —
+> reemplazado por "Inversor" o "Admin", igual que en el resto de `Workspace/docs/`, ver nota
+> del glosario en `CLAUDE.md`; (2) se documenta explícitamente una discrepancia de stack, ver
+> sección "Nota de stack" abajo, en vez de elegir en silencio; (3) el original usa
+> "Cuidadora"/"Cuidadoras" en varios lugares (tabla de usuarios del sistema, catálogo de
+> especialidades) — reemplazado por "Asistente"/"Asistente Integral" en todo el documento,
+> regla del glosario obligatorio; (4) se agregó la sección "Landing page de reclutamiento"
+> (contenido de la página pública — perfiles buscados, beneficios, zonas — del original, que
+> no estaba condensada acá todavía); (5) queda fuera de alcance la Sección 8 del original
+> ("prestadora-original vs. CUIDARLOS", comparativa de posicionamiento) y la mención a explorar aval
+> institucional de terceros (Cruz Roja, AAGG) — son decisiones de negocio/marketing, no
+> generan código.
 
 ## Objetivo
 
@@ -53,6 +61,28 @@ le da al aspirante una noción clara de cuánto falta, igual que un onboarding p
 | Familia | Contrata el servicio | Portal de seguimiento |
 | Coordinador | Rol operativo | Gestión de su zona |
 
+## Landing page de reclutamiento (sitio público)
+
+Cara pública de la campaña de incorporación — comunica a quién busca prestadora-original, qué ofrece y
+cómo es el proceso, antes de llevar al aspirante al formulario. Corrección de terminología
+respecto del documento fuente: donde el original dice "Cuidadoras" se usa "Asistentes
+Integrales" (glosario de `CLAUDE.md`).
+
+**Perfiles buscados** (checklist visual, no un formulario todavía): Asistente Integral /
+Auxiliar de Enfermería / Enfermero/a profesional / Kinesiólogo/a / Acompañante Terapéutico/a
+/ Fonoaudiólogo/a / Psicólogo/a / Terapista Ocupacional / Nutricionista / otras
+especialidades vinculadas al cuidado de personas — mismo catálogo que `especialidades` en
+`asistentes` (`DATA_MODEL.md`), no crear una lista paralela.
+
+**Beneficios que comunica el sitio**: trabajo registrado; honorarios acordados según
+especialidad y experiencia (sin publicar montos — ver regla abajo); Certificado prestadora-original con
+QR verificable; respaldo operativo permanente; aplicación propia de gestión de guardias;
+capacitación continua.
+
+**Zonas de cobertura**: mismo catálogo de zona/municipios que la Sección E del formulario
+(ver abajo) — no duplicar como una lista independiente en el código, es contenido estático
+de la landing que puede leer del mismo catálogo.
+
 ## Formulario de postulación (landing pública)
 
 Regla explícita del PRD original: **no publicar honorarios en el sitio** — se relevan en el
@@ -91,9 +121,11 @@ la asignación** hasta que Admin confirme el alta de monotributo — este es el 
 ### Sección C — Formación y certificaciones
 
 Profesión/especialidad (checkboxes múltiples — mismo catálogo que `especialidades` en
-`asistentes`: Cuidadora Domiciliaria, AT, Enfermero/a, Auxiliar de Enfermería, Asistente
-Gerontológico/a, Kinesiólogo/a, Fonoaudiólogo/a, Psicólogo/a, Terapista Ocupacional,
-Nutricionista, Voluntario/a, Otro — mínimo 1 obligatorio). Estudios/cursos y experiencia
+`asistentes`: Asistente Integral, Acompañante Terapéutico/a, Enfermero/a, Auxiliar de
+Enfermería, Asistente Gerontológico/a, Kinesiólogo/a, Fonoaudiólogo/a, Psicólogo/a,
+Terapista Ocupacional, Nutricionista, Voluntario/a, Otro — mínimo 1 obligatorio;
+corregido respecto del documento fuente, que decía "Cuidadora Domiciliaria" — término
+prohibido por el glosario de `CLAUDE.md`). Estudios/cursos y experiencia
 laboral: formularios dinámicos (múltiples entradas), opcionales pero mejoran ranking.
 Referencias laborales: nombre/apellido/teléfono, 0 a 5, mínimo 2 para aprobar.
 
