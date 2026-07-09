@@ -864,6 +864,58 @@ lanzamiento cercano, etc.).
 **Verificado**: `npm run build` + `npx vitest run` (18/18) en `panel/`; `npm run build` en
 `sitio-web/`; `schema_etapa2o.sql` corrió sin error contra la base real.
 
+## Actualización — Automatización del deploy de Railway (vía GitHub Actions) + MCP de navegador + cambio de modelo de negocio (PLM Systems)
+
+Continuación de la misma sesión, tres temas separados:
+
+**1. Deploy del backend automatizado (por fin) — commit `2553406`:**
+Se creó `.github/workflows/deploy-backend.yml`: en cada push a `main` que toque
+`backend/**`, corre `railway up --service prestadora-original-backend --environment production --ci`
+autenticado con el secret de GitHub `RAILWAY_TOKEN`. Esto reemplaza el intento fallido de
+integración nativa Railway↔GitHub (bloqueado por una autorización OAuth que solo se puede
+hacer desde el dashboard — ver sección anterior "Intento de automatizar el deploy de
+Railway"). **Falta un solo paso, y es exclusivamente del usuario**: crear un Project Token
+en el dashboard de Railway (proyecto `prestadora-original-backend` → Settings → Tokens, entorno
+`production`) y cargarlo como secret `RAILWAY_TOKEN` del repo. El usuario prefirió no
+pegarlo en el chat (mismo criterio que con la contraseña de Supabase) — quedó acordado que
+lo va a escribir en `No hacer commit/claves y contraseñas.txt` y Claude lo toma de ahí para
+cargarlo con `gh secret set` sin mostrarlo. **Esto sigue pendiente al cierre de esta
+sesión** — verificar en la próxima si ya se cargó (correr un push de prueba y revisar la
+pestaña Actions del repo, o simplemente preguntar).
+
+**2. MCP de Playwright (navegador) instalado, pendiente de reinicio:**
+El usuario preguntó por qué Claude no podía crear el Project Token de Railway él mismo (no
+hay mutación de API para eso, confirmado, y no había ninguna herramienta de navegador
+disponible en la sesión). Pidió agregarla, y se registró con:
+`claude mcp add playwright -s user -- npx -y @playwright/mcp@latest`
+Quedó guardado en `C:\Users\Usuario\.claude.json` a **nivel de usuario** (`-s user`), o sea
+disponible para cualquier proyecto/sesión futura, no solo este. `claude mcp list` lo
+confirma conectado. **Los MCP servers se cargan al iniciar sesión** — hace falta reiniciar
+Claude Code (o abrir sesión nueva) para que las herramientas de navegador aparezcan
+disponibles. Una vez reiniciado, se puede retomar el punto 1 (crear el Project Token
+navegando el dashboard de Railway directamente) sin depender del usuario para ese paso.
+
+**3. Cambio de modelo de negocio — el software pasa a ser un producto SaaS de PLM Systems:**
+El usuario informó (2026-07-09) que el software que se está construyendo **ya no es
+propiedad de prestadora-original Salud** — es un producto que **PLM Systems** está desarrollando en
+formato SaaS, y prestadora-original Salud pasa a ser **cliente/licenciatario** (primera implementación,
+customizada para su operación, con la intención de vendérselo a otras empresas dentro y
+fuera del país a futuro). Pidió puntualmente cambiar el texto de copyright del sitio
+público de "© 2026 prestadora-original Salud. Todos los derechos reservados." a "© 2026 PLM
+[Systems/Sistems — pendiente confirmar ortografía exacta]. Todos los derechos reservados."
+**Este cambio NO se aplicó todavía** — quedó pendiente una pregunta de aclaración al usuario
+(ortografía exacta del nombre + alcance: si el pedido es solo la línea de copyright de
+`sitio-web/src/components/Footer.jsx` o si además hay que revisar textos legales
+—`privacidad`/`terminos`— y el resto de menciones de marca). **Importante**: “prestadora-original
+Salud” sigue siendo la marca correcta en todo lo que describe el negocio de cuidado
+domiciliario en sí (nav, login, PDFs de RRHH tipo `generarDocumentoCese.js`, etc.) — el
+cambio de titularidad aplica solo a quién es dueño/desarrollador del software, no a la marca
+de prestadora-original como negocio. **No dar por sentado el alcance completo de este cambio sin
+confirmar con el usuario** — podría eventualmente implicar revisar `CLAUDE.md` (quién es
+"el usuario" del glosario legal, futuro modelo multi-tenant para otros clientes SaaS,
+textos legales de `privacidad`/`terminos`), pero eso no se decidió todavía, solo se pidió el
+cambio puntual del copyright.
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
