@@ -696,6 +696,50 @@ no vía SQL Editor manual — script de una sola vez, borrado después de usarse
 **Verificado**: `npm run build` de `panel/` y `sitio-web/` sin errores; `npx vitest run`
 18/18 en `panel/`; las 3 migraciones nuevas corrieron sin error contra la base real.
 
+## Actualización — Función 7 de PRD_02B (generador de documentación) + cierre del gap de DNI (trabajo nocturno autónomo)
+
+Sesión nocturna sin presencia del usuario (instrucción explícita: avanzar todo lo posible sin
+detenerse a esperar confirmación, saltear únicamente lo que dependa de él). Se completó la
+única pieza que quedaba pendiente de `PRD_02B_Gestion_Personal.md`: la función 7
+("Generador de documentación") de 9.
+
+- **`panel/src/lib/generarDocumentoCese.js`** (nuevo): genera los 6 documentos PDF de la
+  función 7 con `jspdf` (mismo patrón client-side-only que el resto del Panel, sin backend
+  nuevo): liquidación final, telegrama de cese, notificación de fin de período de prueba,
+  certificado de trabajo, certificado de remuneraciones y servicios, constancia de ausencia
+  justificada. Reutiliza `calcularCese` — no reimplementa ningún cálculo legal (regla 10).
+  Cada PDF incluye un disclaimer fijo: debe ser revisado por un abogado laboralista antes de
+  su entrega o uso formal (mismo criterio de cautela que las filas PLACEHOLDER de
+  `escalas_legales`).
+- Wireado en el Panel: botones de descarga en `VinculoCeseTab.jsx` (liquidación +
+  telegrama/notificación según causal, en el historial de ceses), `AusenciasCoberturaTab.jsx`
+  (constancia por ausencia) y `PerfilTab.jsx` (certificado de trabajo visible a
+  Coordinador+Admin; certificado de remuneraciones **solo Admin**, porque expone
+  `valor_hora`/`sueldo_basico` — mismo criterio de `SECURITY.md` que ya restringe esos campos
+  en el formulario de Perfil).
+- **Gap descubierto al construir el certificado de trabajo**: no existía columna `dni` en
+  ningún lado del schema, pese a que `PRD_03_Reclutamiento.md` ya la pedía como campo
+  obligatorio del formulario público desde antes de esta sesión. Cerrado de punta a punta:
+  `backend/src/db/schema_etapa2m.sql` (nuevo, aplicado y verificado contra Supabase real —
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS dni TEXT`, nullable por los registros existentes)
+  en `postulaciones` y `asistentes`; campo agregado al formulario público
+  (`TrabajaConNosotrosForm.jsx`, obligatorio), al backend (`postulacionAsistente.js`:
+  validación + insert + email al Coordinador; `panelCuentas.js`: copiado al convertir
+  Postulación → Asistente), y mostrado en `PostulacionDetalle.jsx`/`PerfilTab.jsx`.
+- i18n: todas las claves nuevas (`asistentes.documentos.*`, `asistentes.cese.documentos`/
+  `descargar_liquidacion`/`descargar_telegrama`/`descargar_notificacion_prueba`,
+  `asistentes.ausencias.descargar_constancia`, `asistentes.dni`, `postulaciones.dni`,
+  `trabaja.campo_dni`) agregadas simultáneamente en es-AR/en/pt-BR (regla 2).
+
+**Verificado**: `npm run build` de `panel/` y `sitio-web/` sin errores; `npx vitest run`
+18/18 en `panel/`; `schema_etapa2m.sql` corrió sin error contra la base real (confirmado por
+consola: "OK: columnas dni agregadas").
+
+**No se avanzó** sobre Etapa 3 (PWA Asistentes) en esta sesión — aunque está desbloqueada,
+es una etapa nueva completa (login, guardias, GPS, reporte diario con IA) que amerita su
+propio arranque de sesión con lectura de PRD y confirmación de alcance, no una extensión
+del trabajo de esta noche.
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
@@ -713,8 +757,10 @@ _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
   explícitamente `'PLACEHOLDER — validar con abogado laboralista'` — son valores de ejemplo
   para poder testear `calcularCese`/`calcularScoreRiesgo`, no valores legales reales.
   **No usar en producción sin revisión de un abogado laboralista.**
-- Del PRD_02B quedan deliberadamente afuera de este corte (no bloquean el resto): el
-  generador de documentación (PDF de liquidación de cese, función 7 de 9 del PRD).
+- ~~Del PRD_02B quedan deliberadamente afuera de este corte (no bloquean el resto): el
+  generador de documentación (PDF de liquidación de cese, función 7 de 9 del PRD).~~
+  **Resuelto (2026-07-09)** — ver "Actualización — Función 7 de PRD_02B" arriba.
+  `PRD_02B_Gestion_Personal.md` queda con sus 9 funciones completas.
 - El diseño visual/formato del certificado (PDF descargable con membrete, etc.) no está
   definido en ningún PRD — el corte actual solo genera el QR como imagen PNG descargable,
   sin un layout de certificado imprimible. Queda para cuando haya spec de diseño.
@@ -727,25 +773,12 @@ _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
   `PRD_03_Reclutamiento.md` — ver su nota de cabecera para el detalle completo de las 5
   correcciones aplicadas. Sección 8 del original ("prestadora-original vs. CUIDARLOS") y alianza
   institucional con terceros quedan fuera de alcance (decisión de negocio/marketing).
-- **TAREA ASIGNADA AL USUARIO — "El Filtro prestadora-original" usado como si fuera público en
-  `docs/prestadora-original_Fundacional_v3.pdf`** (detectado 2026-07-09): el PDF lo propone como ejemplo
-  de post de Instagram (sección 5.3), lo cual contradice la corrección ya aplicada en
-  `CLAUDE.md` el 2026-07-08. Aclaración (no es un cambio de nombre, son dos términos que
-  conviven según el contexto — ver glosario en `CLAUDE.md`): "El Filtro prestadora-original" sigue siendo
-  el nombre correcto para la referencia interna general al concepto (nunca público); dentro
-  del Panel, esa misma pantalla se llama "Proceso de Incorporación de Asistentes" (no "Filtro
-  prestadora-original" ahí). En el HTML (`prestadora-original_Manual_Identidad_v1.html`) ya se corrigió la tabla de
-  terminología para reflejar ambos términos correctamente. **El usuario se encarga
-  personalmente de** corregir el ejemplo de post de Instagram en
-  `docs/prestadora-original_Fundacional_v3.pdf` (no editable por Claude) para que no proponga "Filtro
-  prestadora-original" como contenido público.
-- **TAREA ASIGNADA AL USUARIO — conflicto de tipografía entre `prestadora-original_Fundacional_v3.pdf` y
-  `prestadora-original_Manual_Identidad_v1.html`** (detectado 2026-07-09): el PDF (pág. 2) dice
-  "Tipografía: Arial"; el HTML y `docs/DESIGN_SYSTEM.md` (ya implementado en panel/sitio-web)
-  usan Playfair Display + DM Sans. Se definió que **el HTML tiene preeminencia sobre el PDF**
-  en todo lo referido a identidad de marca — el PDF quedó desactualizado en ese punto. El
-  usuario se encarga de corregir la tabla de tipografía en `docs/prestadora-original_Fundacional_v3.pdf`
-  (no editable por Claude) para que no quede como fuente contradictoria en futuras sesiones.
+- ~~TAREA ASIGNADA AL USUARIO — "El Filtro prestadora-original" usado como si fuera público en
+  `docs/prestadora-original_Fundacional_v3.pdf` (sección 5.3, ejemplo de post de Instagram)~~
+  **Resuelto por el usuario (2026-07-09).**
+- ~~TAREA ASIGNADA AL USUARIO — conflicto de tipografía entre `prestadora-original_Fundacional_v3.pdf`
+  ("Arial") y `prestadora-original_Manual_Identidad_v1.html` (Playfair Display + DM Sans)~~
+  **Resuelto por el usuario (2026-07-09).**
 
 ## Archivos creados/modificados por sesión
 

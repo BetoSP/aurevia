@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
 import { Alert } from '../../components/ui/Alert';
 import { EstadoLista } from '../../components/layout/EstadoLista';
+import { generarConstanciaAusencia, descargarPDF } from '../../lib/generarDocumentoCese';
 
 const TIPOS = ['enfermedad_inculpable', 'accidente_inculpable', 'otra_licencia', 'ausencia_no_justificada'];
 
@@ -56,6 +57,13 @@ export function AusenciasCoberturaTab({ asistente }) {
     recargar();
   }
 
+  function descargarConstancia(ausencia) {
+    const doc = generarConstanciaAusencia({
+      asistente, ausencia, tipoLabel: t.asistentes.ausencias[`tipo_${ausencia.tipo}`],
+    });
+    descargarPDF(doc, `constancia-ausencia-${asistente.nombre}-${ausencia.fecha_inicio}.pdf`);
+  }
+
   async function asignarCobertura(ausenciaId) {
     const sustitutoId = coberturaForm[ausenciaId]?.asistente_sustituto_id;
     if (!sustitutoId) return;
@@ -82,6 +90,10 @@ export function AusenciasCoberturaTab({ asistente }) {
               {a.fecha_fin ? ` → ${new Date(a.fecha_fin).toLocaleDateString()}` : ` (${t.asistentes.ausencias.en_curso})`}
             </p>
             {a.observaciones && <p>{a.observaciones}</p>}
+
+            <Button variant="secondary" onClick={() => descargarConstancia(a)}>
+              {t.asistentes.ausencias.descargar_constancia}
+            </Button>
 
             <FormField
               label={t.asistentes.ausencias.asignar_sustituto}

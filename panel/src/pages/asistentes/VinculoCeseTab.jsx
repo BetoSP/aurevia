@@ -8,6 +8,11 @@ import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
 import { Alert } from '../../components/ui/Alert';
 import { EstadoLista } from '../../components/layout/EstadoLista';
+import {
+  generarLiquidacionFinal, generarTelegramaCese, generarNotificacionFinPeriodoPrueba, descargarPDF,
+} from '../../lib/generarDocumentoCese';
+
+const CAUSALES_CON_TELEGRAMA = new Set(['despido_con_justa_causa', 'despido_sin_causa', 'abandono_de_trabajo']);
 
 const CAUSALES = [
   'renuncia', 'mutuo_acuerdo', 'despido_con_justa_causa', 'despido_sin_causa',
@@ -71,6 +76,21 @@ export function VinculoCeseTab({ asistente, onActualizado }) {
     onActualizado();
   }
 
+  function descargarLiquidacion(cese) {
+    const doc = generarLiquidacionFinal({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal] });
+    descargarPDF(doc, `liquidacion-${asistente.nombre}-${cese.fecha_cese}.pdf`);
+  }
+
+  function descargarTelegramaONotificacion(cese) {
+    if (cese.causal === 'periodo_de_prueba') {
+      const doc = generarNotificacionFinPeriodoPrueba({ asistente, cese });
+      descargarPDF(doc, `notificacion-fin-periodo-prueba-${asistente.nombre}-${cese.fecha_cese}.pdf`);
+      return;
+    }
+    const doc = generarTelegramaCese({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal] });
+    descargarPDF(doc, `telegrama-cese-${asistente.nombre}-${cese.fecha_cese}.pdf`);
+  }
+
   return (
     <div>
       <h2>{t.asistentes.tabs.historial_ceses}</h2>
@@ -82,6 +102,7 @@ export function VinculoCeseTab({ asistente, onActualizado }) {
               <th>{t.asistentes.cese.causal}</th>
               <th>{t.asistentes.cese.monto}</th>
               <th>{t.asistentes.cese.revisado_abogado}</th>
+              <th>{t.asistentes.cese.documentos}</th>
             </tr>
           </thead>
           <tbody>
@@ -91,6 +112,14 @@ export function VinculoCeseTab({ asistente, onActualizado }) {
                 <td>{t.asistentes.causales[c.causal]}</td>
                 <td>{c.monto_total !== null ? `$${Number(c.monto_total).toLocaleString('es-AR')}` : '—'}</td>
                 <td>{c.revisado_por_abogado ? '✓' : <span className="badge badge-en_revision">{t.comun.no}</span>}</td>
+                <td>
+                  <Button variant="secondary" onClick={() => descargarLiquidacion(c)}>{t.asistentes.cese.descargar_liquidacion}</Button>
+                  {(CAUSALES_CON_TELEGRAMA.has(c.causal) || c.causal === 'periodo_de_prueba') && (
+                    <Button variant="secondary" onClick={() => descargarTelegramaONotificacion(c)}>
+                      {c.causal === 'periodo_de_prueba' ? t.asistentes.cese.descargar_notificacion_prueba : t.asistentes.cese.descargar_telegrama}
+                    </Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

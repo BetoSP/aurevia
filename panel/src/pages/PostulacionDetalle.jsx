@@ -99,6 +99,8 @@ export function PostulacionDetalle({ postulacion, onClose, onActualizada }) {
         {error && <Alert variant="error">{error}</Alert>}
 
         <dl className="panel-detalle-lista">
+          <dt>{t.postulaciones.dni}</dt>
+          <dd>{postulacion.dni || '—'}</dd>
           <dt>{t.postulaciones.telefono}</dt>
           <dd>{postulacion.telefono}</dd>
           <dt>{t.postulaciones.email}</dt>

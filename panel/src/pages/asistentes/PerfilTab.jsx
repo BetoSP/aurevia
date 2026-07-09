@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
 import { Alert } from '../../components/ui/Alert';
+import { generarCertificadoTrabajo, generarCertificadoRemuneracionesServicios, descargarPDF } from '../../lib/generarDocumentoCese';
 
 export function PerfilTab({ asistente, onActualizado }) {
   const { t } = useLocale();
@@ -61,12 +62,22 @@ export function PerfilTab({ asistente, onActualizado }) {
     onActualizado();
   }
 
+  function descargarCertificadoTrabajo() {
+    descargarPDF(generarCertificadoTrabajo({ asistente }), `certificado-trabajo-${asistente.nombre}.pdf`);
+  }
+
+  function descargarCertificadoRemuneraciones() {
+    descargarPDF(generarCertificadoRemuneracionesServicios({ asistente }), `certificado-remuneraciones-${asistente.nombre}.pdf`);
+  }
+
   return (
     <div>
       {error && <Alert variant="error">{error}</Alert>}
       {guardado && <Alert variant="info">{t.comun.guardar} ✓</Alert>}
 
       <dl className="panel-detalle-lista">
+        <dt>{t.asistentes.dni}</dt>
+        <dd>{asistente.dni || '—'}</dd>
         <dt>{t.asistentes.telefono}</dt>
         <dd>{asistente.telefono || '—'}</dd>
         <dt>{t.asistentes.email}</dt>
@@ -117,6 +128,16 @@ export function PerfilTab({ asistente, onActualizado }) {
       )}
 
       <Button onClick={guardar} disabled={guardando}>{guardando ? t.comun.guardando : t.comun.guardar}</Button>
+
+      <h2>{t.asistentes.documentos.titulo}</h2>
+      <Button variant="secondary" onClick={descargarCertificadoTrabajo}>
+        {t.asistentes.documentos.certificado_trabajo}
+      </Button>
+      {esAdmin && (
+        <Button variant="secondary" onClick={descargarCertificadoRemuneraciones}>
+          {t.asistentes.documentos.certificado_remuneraciones}
+        </Button>
+      )}
     </div>
   );
 }

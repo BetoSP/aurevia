@@ -119,6 +119,7 @@ panelCuentasRouter.post('/asistente', requiereRolPanel, requiereAdmin, async (re
     const { error: errorAsistente } = await supabase.from('asistentes').insert({
       id: asistenteId,
       nombre: postulacion.nombre,
+      dni: postulacion.dni,
       telefono: postulacion.telefono,
       email: postulacion.email,
       especialidades: postulacion.especialidades.split(',').map((e) => e.trim()).filter(Boolean),
