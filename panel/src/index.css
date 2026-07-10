@@ -486,3 +486,36 @@ h2 {
 .score-riesgo-nota {
   font-weight: 600;
 }
+
+/* ---------- Módulo 6: Guardias ---------- */
+
+.panel-guardia-dia-titulo {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--azul-oscuro);
+}
+
+.panel-guardia-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+
+.guardia-programada { border-left: 4px solid var(--azul-medio); }
+.guardia-activa     { border-left: 4px solid var(--verde-exito); }
+.guardia-completada { border-left: 4px solid var(--texto-secundario); }
+.guardia-cancelada  { border-left: 4px solid var(--rojo-peligro); }
+.guardia-ausente    { border-left: 4px solid var(--naranja-alerta); }
+
+.panel-guardia-alerta {
+  color: #A82735;
+  font-weight: 600;
+  font-size: 0.85rem;
+}

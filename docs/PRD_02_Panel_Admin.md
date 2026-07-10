@@ -57,35 +57,49 @@ de reportes, alertas activas.
 
 ### Módulo 6 — Guardias
 
-**Estado 2026-07-10: solo el schema de datos está construido** (`backend/src/db/schema_modulo6_guardias.sql`,
-8 tablas, RLS multi-tenant verificada contra Supabase real — ver `DATA_MODEL.md` y
-`SECURITY.md`). No hay rutas backend ni pantallas de Panel todavía. El diseño real de datos
-va más allá de lo que describía la versión anterior de esta sección (vista calendario +
-GPS simple) — falta diseñar la UI de Panel contra las siguientes piezas ya modeladas:
+**Estado 2026-07-10: Parte 1 ("Guardias core") construida en el Panel**, sobre el schema
+existente (`backend/src/db/schema_modulo6_guardias.sql`, 8 tablas, RLS multi-tenant
+verificada contra Supabase real — ver `DATA_MODEL.md` y `SECURITY.md`). Sin rutas backend
+nuevas: la UI consulta/escribe directo contra Supabase (anon key), confiando en las policies
+RLS ya definidas en el schema para el aislamiento por prestadora/zona — mismo patrón que
+`Familias.jsx`/`Asistentes.jsx`.
 
-- **Series de guardias** (`series_guardias`): una guardia recurrente (ej. "todos los martes
-  8-14hs") de la que se generan instancias concretas en `guardias` — la UI necesita un flujo
-  de creación de serie, no solo de guardia suelta.
-- **Vista calendario + lista** (diseño original, sigue vigente): fecha, Asistente, paciente,
-  modalidad, estado; última ubicación GPS si la guardia está activa (ahora respaldada por
-  histórico en `guardias_tracking_gps`, no solo el punto de check-in/check-out); alerta
-  automática si check-in sin check-out después de X horas. Cada estado
-  (programada/activa/completada/cancelada) usa color automático — ver "Estados visuales de
-  guardias" en `DESIGN_SYSTEM.md`.
-- **Domicilio temporal del Paciente** (`domicilios_temporales_paciente`): la UI de una
-  guardia puntual debe permitir cargar un domicilio distinto al habitual (ej. internación en
-  casa de un familiar).
-- **Personal de emergencia** (`personal_emergencia`): contacto de emergencia asociado a una
-  guardia/Paciente, visible desde la ficha de guardia.
-- **Incidentes de relevo** (`incidentes_relevo`): pantalla para registrar un Asistente
-  ausente a una guardia, incluyendo el caso "Ausente sin relevo previo" (ver glosario de
-  `CLAUDE.md`) — el de mayor prioridad visual, ya que el Paciente puede quedar sin nadie.
-  Necesita su propio flujo de escalada (`configuracion_escalada_relevo`) y de excepción
-  autorizada por la Familia (`excepciones_familiar_relevo`).
+Piezas de la Parte 1, ya construidas (`panel/src/pages/Guardias.jsx`,
+`panel/src/pages/guardias/NuevaGuardiaModal.jsx`,
+`panel/src/pages/guardias/GuardiaAcciones.jsx`):
 
-No diseñar ni construir la UI de este módulo sin releer el schema real primero — la versión
-anterior de esta sección quedó desactualizada frente a lo que ya se implementó a nivel de
-datos.
+- **Alta de serie o guardia suelta**: un modal con un checkbox "es una guardia recurrente"
+  que alterna entre cargar una guardia de fecha única o una serie (`series_guardias`, con
+  días de la semana + vigencia) que genera las filas concretas de `guardias` en el momento de
+  crearla, acotado a 90 días si no se carga `vigente_hasta` (ventana práctica, no indefinida).
+- **Vista lista, agrupada por día** (no calendario visual con grilla — una agenda por fecha
+  cumple la misma función de escaneo rápido sin sumar una librería de calendario): fecha,
+  Asistente, Paciente, modalidad, estado con color automático (clases `.guardia-*` de
+  `DESIGN_SYSTEM.md`, incluye el `.guardia-ausente` que faltaba). Alerta visual si la guardia
+  está activa con check-in y sin check-out pasadas 2hs del horario pactado.
+- **Checkpoint de salida, check-in de llegada y check-out**: capturan timestamp +
+  geolocalización best-effort (`panel/src/lib/ubicacion.js` — nunca bloquea la acción si el
+  navegador no expone o niega la geolocalización, por la regla 11 de `CLAUDE.md`). El
+  check-out respeta `checkout_bloqueado` (lo bloquea y explica por qué), aunque nada en esta
+  Parte 1 pone ese flag en `true` todavía — eso es de la Parte 2.
+- **Cancelar guardia** (origen + alcance) y **marcar ausente**, ambas con confirmación
+  explícita (regla 4) — "marcar ausente" solo cambia el estado de la guardia; no crea todavía
+  ningún `incidentes_relevo` ni dispara escalada (eso es la Parte 2, sin construir).
+
+**Explícitamente fuera de esta Parte 1** (no construido, ni siquiera parcialmente):
+
+- **Continuidad de guardia — Parte 2**: `incidentes_relevo`, `configuracion_escalada_relevo`,
+  `excepciones_familiar_relevo`. Tiene que contemplar desde el diseño que
+  `personal_emergencia` puede estar vacío en el momento en que se activa (la Parte 3 puede no
+  existir todavía) sin romper — degradar con un mensaje, no fallar.
+- **Piezas de apoyo — Parte 3**: `domicilios_temporales_paciente`, `personal_emergencia`.
+- **`guardias_tracking_gps`**: no se construye ni el endpoint ni ninguna forma parcial/con
+  flag — bloqueante explícito por Ley 25.326 sin política de retención definida (ver
+  comentario en el propio schema). No reproponer una versión "detrás de un flag" sin resolver
+  antes esa política.
+
+No diseñar ni construir el resto de este módulo (Partes 2 y 3) sin releer el schema real
+primero.
 
 ### Módulo 7 — Reportes y Alertas (IA Nivel 2)
 Lista de alertas activas (ROJA/AMARILLA) por paciente. Clic → ver reportes que generaron

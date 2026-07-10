@@ -181,7 +181,12 @@ variables de la paleta funcional, no colores nuevos:
 .guardia-activa     { border-left: 4px solid var(--verde-exito); }
 .guardia-completada { border-left: 4px solid var(--texto-secundario); }
 .guardia-cancelada  { border-left: 4px solid var(--rojo-peligro); }
+.guardia-ausente    { border-left: 4px solid var(--naranja-alerta); }
 ```
+
+`ausente` se agregó como quinto valor de `guardias.estado` al diseñar el schema real
+(`backend/src/db/schema_modulo6_guardias.sql`) — distinto de `cancelada`, esta sección había
+quedado con solo 4 reglas. Corregido al implementar Módulo 6 Parte 1 (2026-07-10).
 
 ## Convenciones de UI (patrón adoptado de análisis de GlamourOS/ERP salones — no vinculante,
 ## solo se toman estas dos prácticas puntuales, ver justificación en memoria de sesión)

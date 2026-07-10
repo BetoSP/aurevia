@@ -10,7 +10,7 @@
 |---|---|---|
 | 0 | Setup: repo, estructura, variables de entorno | 🟢 Completo |
 | 1 | Sitio web público (páginas + formularios + backend) | 🟡 En progreso |
-| 2 | Panel de administración (Módulos 1-5 + primer corte de precios/Prestaciones + gestión de usuarios del Panel + Proceso de Incorporación + Certificado prestadora-original + rol Superadmin real + Módulo 8 Configuración) | 🟢 Desplegado a producción (2026-07-08): https://prestadora-original-panel.vercel.app — Módulos 6-7 pendientes (dependen de la PWA de Asistentes, Etapa 3) |
+| 2 | Panel de administración (Módulos 1-5 + primer corte de precios/Prestaciones + gestión de usuarios del Panel + Proceso de Incorporación + Certificado prestadora-original + rol Superadmin real + Módulo 8 Configuración) | 🟢 Desplegado a producción (2026-07-08): https://prestadora-original-panel.vercel.app — Módulo 6 Parte 1 (Guardias core) construida 2026-07-10, sin desplegar todavía junto al resto; Módulo 6 Partes 2-3 y Módulo 7 pendientes |
 | 2B | Gestión de Personal (vínculo/cese/riesgo/cobertura) | 🟢 Completo — código listo y SQL aplicado/verificado contra Supabase real |
 | 3 | PWA Asistentes (login, guardias, GPS, reporte + IA) | 🔴 No iniciado — desbloqueada: Etapa 2 ya está desplegada (regla de secuencia de `BUILD_ORDER.md`) |
 | 4 | PWA Familias (login, reportes, alertas) | 🔴 No iniciado |
@@ -1160,17 +1160,67 @@ diagnóstico) contra el estado real del código y se aplicaron las correcciones 
 - **Sin hallazgos**: `DESIGN_SYSTEM.md`, `AI_PROMPTS.md` — vocabulario ya alineado al
   glosario, sin menciones obsoletas de roles ni de Filtro prestadora-original.
 
-**Dos preguntas se elevaron al Desarrollador, resueltas así:**
-1. **PRD_06_Guardias.md dedicado**: no se crea todavía. Se sigue documentando el módulo en
-   `PROGRESS.md`/`PLAN_MULTITENANT_PLM.md`/`PRD_02_Panel_Admin.md` hasta que arranque la
-   implementación de rutas/UI — evita mantener un PRD que puede cambiar antes de tocarlo.
-2. **"Filtro prestadora-original" vs "Proceso de Incorporación de Asistentes" en `PRD_03_Reclutamiento.md`**:
+**Nota de corrección (2026-07-10)**: este documento había registrado acá una supuesta
+decisión del Desarrollador de posponer la creación de `PRD_06_Guardias.md` — al pedir
+verificación contra evidencia, no se encontró ningún commit ni intercambio anterior a esta
+misma sesión que la respalde; era una inferencia de sesión tratada como hecho confirmado,
+sin sustento real. Corregido: no hay decisión tomada sobre `PRD_06_Guardias.md`, queda
+abierto. El Desarrollador confirmó que la prioridad de trabajo es arrancar Módulo 6
+(rutas backend + UI de Panel) directamente.
+
+**Una pregunta se elevó al Desarrollador esta sesión, resuelta así:**
+1. **"Filtro prestadora-original" vs "Proceso de Incorporación de Asistentes" en `PRD_03_Reclutamiento.md`**:
    aprobado reescribir. Se renombraron los dos títulos de sección que describen directamente
    lo que alimenta pantallas de Panel ("El Filtro prestadora-original — 6 etapas de incorporación" →
    "Proceso de Incorporación de Asistentes — 6 etapas", con nota de nomenclatura explícita; y
    "Etapa 5 del Filtro" → "Etapa 5 del Proceso de Incorporación de Asistentes"). "Filtro
    prestadora-original" queda reservado para el concepto general/interno, no para el nombre de estas
    pantallas.
+
+## Actualización — Módulo 6 (Guardias) Parte 1: "Guardias core" construida en el Panel (2026-07-10)
+
+A pedido explícito del Desarrollador, priorizado por sobre el Bloque 4 del plan
+multi-tenant (las 8 tablas de Guardias son independientes de las 8 tablas afectadas por ese
+Bloque, y el negocio real con la primera Familia pesa más que protegerse de una segunda
+prestadora hipotética todavía inexistente). Alcance acordado en 3 partes — esta sesión
+construyó solo la Parte 1:
+
+- **Parte 1 — Guardias core (construida)**: `series_guardias` (alta de serie recurrente,
+  genera `guardias` concretas al crearla, acotado a 90 días si no se carga
+  `vigente_hasta`), `guardias` (alta suelta, lista agenda por día, checkpoint de salida,
+  check-in/check-out con geolocalización best-effort, cancelación, marcar ausente).
+- **Parte 2 — Continuidad de guardia**: no construida (`incidentes_relevo`,
+  `configuracion_escalada_relevo`, `excepciones_familiar_relevo`).
+- **Parte 3 — Piezas de apoyo**: no construida (`domicilios_temporales_paciente`,
+  `personal_emergencia`).
+
+Sin rutas backend nuevas: se implementó enteramente como páginas de Panel con llamadas
+directas a Supabase (anon key), apoyándose en las policies RLS que ya venían completas desde
+`schema_modulo6_guardias.sql` — mismo patrón que `Familias.jsx`/`Asistentes.jsx`, reservando
+rutas con Service Role Key solo para operaciones privilegiadas que RLS no puede resolver
+(no aplica acá).
+
+Archivos nuevos: `panel/src/pages/Guardias.jsx`, `panel/src/pages/guardias/NuevaGuardiaModal.jsx`,
+`panel/src/pages/guardias/GuardiaAcciones.jsx`, `panel/src/lib/ubicacion.js` (geolocalización
+best-effort, nunca bloqueante — regla 11 de `CLAUDE.md`). Modificados: `App.jsx` (ruta
+`/guardias`), `Layout.jsx` (nav), `i18n/translations.js` (bloque `guardias` + `nav.guardias`
+en las 3 locales), `EstadoLista.jsx` (prop opcional `mensajeVacio` para mensaje de vacío
+específico por página, retrocompatible), `index.css` (clases `.panel-guardia-*` y las 5
+`.guardia-{estado}`), `docs/DESIGN_SYSTEM.md` (agregada la 5ª regla `.guardia-ausente` que
+faltaba — el estado se sumó al diseñar el schema pero nunca se reflejó en esta sección).
+
+**Explícitamente no construido, ni siquiera parcial**: `guardias_tracking_gps` — bloqueante
+por Ley 25.326 sin política de retención definida. El Desarrollador rechazó de forma
+explícita la opción de un endpoint detrás de un flag apagado ("un flag apagado esperando
+activación es, en los hechos, una función a medias que queda dando vueltas"), citando como
+precedente el `DEFAULT` temporal de `prestadora_id` y una ausencia de backup no detectada a
+tiempo — ningún "temporal hasta que se resuelva X" queda medio construido en este proyecto.
+
+**Verificación de esta sesión**: `npm run build` y `npm run lint` (panel) sin errores ni
+warnings nuevos. **No se probó en navegador** (no había sesión de Playwright MCP cargada en
+esta corrida) — falta la prueba manual del flujo completo (alta de serie, checkpoint de
+salida, check-in, check-out, cancelar, marcar ausente) antes de dar por cerrada la Parte 1
+en los hechos, no solo en el código.
 
 ## Problemas conocidos / deuda técnica
 
@@ -1223,6 +1273,7 @@ _Una entrada por sesión de trabajo, más reciente primero._
 
 | Fecha | Sesión | Archivos |
 |---|---|---|
+| 2026-07-10 | **Módulo 6 (Guardias) Parte 1 — "Guardias core" en el Panel.** Priorizado por el Desarrollador por sobre el Bloque 4 del plan multi-tenant (razón: las 8 tablas de Guardias son independientes de las tablas afectadas por ese Bloque, y el negocio real con la primera Familia pesa más que protegerse de una segunda prestadora hipotética). Alcance: alta de serie recurrente o guardia suelta, lista tipo agenda agrupada por día con color automático por estado, checkpoint de salida + check-in/check-out con geolocalización best-effort, cancelación (origen/alcance) y marcar ausente — todo con confirmación explícita en las acciones destructivas. Sin rutas backend nuevas (RLS directa desde Supabase, mismo patrón que `Familias.jsx`). Explícitamente no construido: Parte 2 (Continuidad de guardia), Parte 3 (Piezas de apoyo), y `guardias_tracking_gps` en ninguna forma (ni endpoint con flag) — bloqueante por Ley 25.326 sin política de retención definida. Verificado con `npm run build`/`npm run lint` del panel, sin prueba manual en navegador todavía (sin sesión de Playwright MCP disponible) | `panel/src/pages/Guardias.jsx` (nuevo); `panel/src/pages/guardias/{NuevaGuardiaModal,GuardiaAcciones}.jsx` (nuevos); `panel/src/lib/ubicacion.js` (nuevo); `panel/src/App.jsx` (ruta `/guardias`); `panel/src/components/layout/Layout.jsx` (link de nav); `panel/src/components/layout/EstadoLista.jsx` (prop opcional `mensajeVacio`); `panel/src/index.css` (clases `.panel-guardia-*` y `.guardia-{estado}`); `panel/src/i18n/translations.js` (bloque `guardias` + `nav.guardias` en es-AR/en/pt-BR); `docs/DESIGN_SYSTEM.md` (5ª regla `.guardia-ausente`); `docs/PRD_02_Panel_Admin.md` (sección Módulo 6 reescrita); `docs/BUILD_ORDER.md` (fila Módulo 6 actualizada); `docs/PROGRESS.md` (esta entrada) |
 | 2026-07-10 | **Retiro total de "Filtro prestadora-original"**: el Desarrollador instruyó reemplazar el término en todos lados, aclarando que ni siquiera corresponde su uso interno (endurece la regla anterior del 2026-07-08, que sí permitía uso interno). Glosario de `CLAUDE.md` consolidado a una sola fila ("Proceso de Incorporación de Asistentes", sin excepción interna) con nota de retiro fechada. Barrido de todo el repo (grep `Filtro prestadora-original\|El Filtro`): corregidos `SECURITY.md` (2 menciones), `DATA_MODEL.md` (3 menciones), `PLAN_MULTITENANT_PLM.md` (1 mención, ya no se deja como "bajo impacto, sin acción"), y comentarios de código en `backend/src/routes/panelCuentas.js`, `backend/src/db/schema_etapa2e.sql`, `backend/src/db/schema_etapa2b.sql` (2 menciones). El identificador SQL `etapa_filtro` (enum ya aplicado en Supabase) no se renombra — es un nombre técnico abreviado, no el término de negocio, y renombrarlo requeriría una migración fuera de alcance de este barrido documental. Entradas históricas de este mismo archivo (fechadas 2026-07-07/08/09) que citan "Filtro prestadora-original" como parte de un registro de una decisión pasada quedan sin tocar — documentan fielmente lo que era cierto en ese momento, no un uso vigente del término. `docs/prestadora-original_Manual_Identidad_v1.html` queda pendiente de una decisión explícita del Desarrollador (contiene una guía de terminología que todavía marca "El Filtro prestadora-original" como uso interno correcto, y el archivo estaba marcado "correcto así, no tocar" en `CONTEXT.md`) | `CLAUDE.md`, `docs/SECURITY.md`, `docs/DATA_MODEL.md`, `docs/PLAN_MULTITENANT_PLM.md`, `backend/src/routes/panelCuentas.js`, `backend/src/db/schema_etapa2e.sql`, `backend/src/db/schema_etapa2b.sql`, `docs/PROGRESS.md` (esta entrada) |
 | 2026-07-10 | **Feedback consolidado sobre el Bloque 2, resuelto — Bloque 3 sigue sin arrancar hasta confirmación del usuario.** Tres partes: (1) colisión de nombres: `schema_etapa3a.sql`/`schema_etapa3b.sql` reusaban la numeración de "Etapa 3" (`docs/BUILD_ORDER.md`, PWA Asistentes) para una migración cross-cutting no relacionada — renombrados a `schema_multitenant_01.sql`/`schema_multitenant_02.sql`, actualizadas todas las referencias internas y en `CLAUDE.md`/`docs/PLAN_MULTITENANT_PLM.md`/`docs/PROGRESS.md`; barrido confirmado (`grep -r "etapa3a\|etapa3b"` y `grep -r "etapa3"`) — las únicas menciones restantes de "Etapa 3" en el repo son legítimas (la etapa real del build order). (2) Sección 5 del plan ajustada con los tres puntos pedidos: 5.5 (remitente/firma de emails) marcado con prioridad más alta que 5.1/5.3 (color/logo) — es riesgo de fuga de marca/reputación entre tenants (un email ya enviado con la firma equivocada no se puede retirar), no solo cosmético; 5.1 (paleta) documentado con la pre-limpieza obligatoria antes de dinamizar (decidir si `panel/`/`sitio-web/` comparten una sola fuente de variables o siguen sincronizados a mano, y barrer los hex sueltos de `panel/src/index.css`); 5.2 (tipografía) documentado como más complejo que color — necesita mecanismo de carga dinámica de fuentes (hoy `<link>` de Google Fonts fijo en `layout.jsx`), no es "una variable más". (3) Tres brechas de verificación del Bloque 2 resueltas: **no existe suite de tests automatizada en `backend/`** (confirmado vía `package.json` — sin framework, sin script `test`; verificación de rutas del Bloque 3 tendrá que apoyarse en scripts de verificación manual contra Supabase real, mismo mecanismo ya usado para verificar Bloques 1-2, hasta que se decida invertir en una suite real); **prueba de comportamiento de RLS** ejecutada contra Supabase real (no solo estructural): login como `admin_prestadora` vía anon key (`@supabase/supabase-js`, cuenta de prueba `prestadora-original.salud@gmail.com`), comparado contra conteo de superusuario en `pacientes`/`ceses`/`ausencias`/`familias`/`asistentes`/`certificados`/`lista_precios` — todas en 0 filas reales hoy (no hay datos operativos cargados todavía), match exacto; dado que 0=0 es evidencia débil, se insertó una fila de prueba temporal en `pacientes` vía superusuario, se confirmó que el usuario autenticado la ve vía RLS, y se borró de inmediato — prueba positiva del mecanismo `current_tenant()`/`es_superadmin()` compartido por las 28 policies reescritas (no se pudo repetir el mismo insert directo en `ceses`/`ausencias` sin crear también un Asistente real con cuenta de Auth, por la FK `asistentes.id → usuarios.id` — mecanismo idéntico ya validado con `pacientes`, riesgo/beneficio no ameritaba fabricar un usuario Auth de prueba); **criterio de cierre exacto del `DEFAULT` temporal** corregido en la sección 4.1 del plan: el Bloque 3 no cierra sin (a) eliminar el `DEFAULT` de las 15 columnas y (b) confirmar con un insert real sin `prestadora_id` explícito que vuelve a fallar — ya no una nota general de "temporal". Bloque 3 pre-autorizado por el usuario pero explícitamente no arrancado ("No lo arranques todavía") | `backend/src/db/schema_multitenant_01.sql`, `schema_multitenant_02.sql` (renombrados); `CLAUDE.md`, `docs/PLAN_MULTITENANT_PLM.md` (secciones 4.1 y 5, referencias de nombre), `docs/PROGRESS.md` (referencias de nombre + esta entrada) |
 | 2026-07-09/10 | **Multi-tenant, Bloque 2 completo — RLS centralizada + rename de rol ejecutado.** Autorizado por el usuario en paralelo al inventario de branding (mensaje: "Seguí con el Bloque 2 tal como está autorizado"). Relevamiento previo (agente en background) de las ~60 comparaciones `rol = 'admin'` en `schema_etapa2*.sql`, tomando solo la versión vigente de cada policy tras rastrear cada `DROP`/`CREATE` posterior: dieron 28 policies vigentes sobre 20 tablas con RLS activa (más 6 policies de zona ya existentes para Coordinador, que necesitaban la condición de tenant sumada, no reemplazada). Ejecutado y verificado contra Supabase real en `backend/src/db/schema_multitenant_02.sql`: (1) funciones `current_tenant()`/`es_superadmin()` creadas (diseño 3.6 del plan); (2) CHECK de `usuarios.rol` reescrito en dos pasos (ensanchado a aceptar `admin` y `admin_prestadora` a la vez, corrida la `UPDATE`, angostado al final a solo `admin_prestadora` — un solo `ALTER` directo falla porque `ADD CONSTRAINT` valida las filas ya existentes contra el CHECK nuevo antes de que la `UPDATE` corra); (3) las 28 policies reescritas con `es_superadmin()`/`current_tenant()`, agregando filtro de tenant donde ya existe `prestadora_id` (Bloque 1) y dejándolo afuera en `configuracion_empresa`/`configuracion_notificaciones` (sin la columna todavía, Bloque 4) y `escalas_legales` (global por diseño, 3.7). Código de aplicación cortado por completo (ya no acepta `'admin'` en paralelo a `admin_prestadora`): `panel/src/lib/roles.js`, `backend/src/middleware/requiereRolPanel.js`, `backend/src/routes/panelUsuarios.js`, `backend/src/routes/panelCuentas.js`, `panel/src/components/layout/ProtectedRoute.jsx`; se encontró y corrigió además un `<option value="admin">` vivo en `panel/src/pages/UsuariosPanel.jsx` (formulario de alta de usuario del panel) que se hubiera roto en la primera alta de un nuevo Admin tras el rename. **Bug real encontrado al escribir este Bloque** (no es parte del diseño de RLS): el `NOT NULL` que el Bloque 1 puso en `prestadora_id` en 15 tablas rompía cualquier alta nueva (cuenta, familia, paciente, ausencia, guardia, certificado, cese, precio, prestación, zona, solicitud, postulación) porque ningún insert de hoy —backend con Service Role Key ni panel con anon key— setea esa columna; no se detectó en el cierre del Bloque 1 porque esa verificación solo miró filas ya existentes (backfill), no altas nuevas. Corregido con `DEFAULT` al UUID de prestadora-original en las 15 columnas, mismo mecanismo que el backfill del Bloque 1, a nivel de schema — explícitamente temporal, el Bloque 3 (filtrado real de tenant en rutas del backend, sin diseñar ni aprobar todavía) lo reemplaza. Verificado contra Supabase real: CHECK final correcto, 2 filas en `admin_prestadora` y 0 en `admin`, 0 policies con literal `'admin'`, 15 defaults aplicados, 18/18 tests de `panel/` OK, sintaxis de los 3 archivos de `backend/` tocados OK. Bloques 3 (backend Service Role Key) y 4 (`configuracion_prestadora` + hardcodeos) siguen sin arrancar | `docs/PLAN_MULTITENANT_PLM.md` (4.1, nota de Bloque 2 completo); `CLAUDE.md` (glosario, entrada `admin_prestadora` sin matiz de transición); `backend/src/db/schema_multitenant_02.sql` (nuevo, aplicado y verificado contra Supabase real); `panel/src/lib/roles.js`, `backend/src/middleware/requiereRolPanel.js`, `backend/src/routes/panelUsuarios.js`, `backend/src/routes/panelCuentas.js`, `panel/src/components/layout/ProtectedRoute.jsx`, `panel/src/pages/UsuariosPanel.jsx` |

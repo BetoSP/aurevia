@@ -17,7 +17,7 @@
 | Diferida | App nativa (Capacitor o React Native) | 50+ familias activas, negocio validado | 1-5 semanas | — |
 | Diferida | IA Niveles 3-5 (matching, asistente virtual, análisis predictivo) | Datos históricos suficientes | Variable | — |
 | En progreso | Multi-tenancy real (entidad `prestadoras`, aislamiento por organización, roles y facturación PLM/prestadora-original) | Plan y diseño aprobados (`docs/PLAN_MULTITENANT_PLM.md`); Bloques 1-3 aplicados y verificados contra Supabase real (2026-07-09/10: aislamiento de datos, RLS centralizada `current_tenant()`/`es_superadmin()`, rol `admin`→`admin_prestadora`, filtrado de tenant en backend); solo falta Bloque 4 (`configuracion_prestadora`) | Variable | `docs/PLAN_MULTITENANT_PLM.md` |
-| En progreso | Módulo 6 — Guardias (series, GPS check-in/out, incidentes de relevo, escalada) | Módulo 4/5 del Panel funcionando | Variable | schema aplicado (`backend/src/db/schema_modulo6_guardias.sql`); sin rutas backend ni UI de Panel todavía — sin PRD dedicado, ver `docs/PROGRESS.md` |
+| En progreso | Módulo 6 — Guardias (series, GPS check-in/out, incidentes de relevo, escalada) | Módulo 4/5 del Panel funcionando | Variable | schema aplicado (`backend/src/db/schema_modulo6_guardias.sql`); **Parte 1 (Guardias core) construida en Panel** (2026-07-10): alta de series/guardias sueltas, lista agenda por día, checkpoint de salida, check-in/check-out, cancelación, marcar ausente — sin rutas backend nuevas (RLS directa). Faltan Parte 2 (Continuidad de guardia) y Parte 3 (Piezas de apoyo) — sin PRD dedicado, ver `docs/PROGRESS.md` |
 
 El reclutamiento (`PRD_03_Reclutamiento.md`) no es una etapa de código separada — sus
 pantallas y formularios se reparten entre Etapa 1 (formulario público de postulación) y

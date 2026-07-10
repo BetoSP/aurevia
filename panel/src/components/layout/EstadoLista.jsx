@@ -2,7 +2,7 @@ import { useLocale } from '../../i18n/LocaleContext';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 
-export function EstadoLista({ estado, error, vacio, recargar, children }) {
+export function EstadoLista({ estado, error, vacio, recargar, mensajeVacio, children }) {
   const { t } = useLocale();
 
   if (estado === 'cargando') {
@@ -21,7 +21,7 @@ export function EstadoLista({ estado, error, vacio, recargar, children }) {
   }
 
   if (vacio) {
-    return <p className="estado-vacio">{t.comun.vacio}</p>;
+    return <p className="estado-vacio">{mensajeVacio || t.comun.vacio}</p>;
   }
 
   return children;
