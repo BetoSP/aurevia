@@ -422,6 +422,34 @@ el usuario (antes de implementar) el formato exacto de numeración fiscal de cad
 emisora (depende de la situación de facturación electrónica de cada una en AFIP, que es un
 tema legal/contable, no técnico).
 
+**Nota pendiente (2026-07-11, sin diseñar):** el Desarrollador propuso que el costo real de
+infraestructura compartida (Supabase/Vercel/Railway/backup — un solo proyecto/deploy/bucket
+para todas las prestadoras, ver `docs/Prompt_Claude_Code_PLM_Multitenant.md:66`) se mida por
+licencia y se refleje en el precio de cada una, en vez de fijar el mismo fee para todas
+independientemente de su volumen de uso. Hoy `esquema_facturacion` solo contempla
+`'por_caso' | 'por_personal' | 'fee_fijo'` — ninguno de los tres mide uso de infraestructura
+en sí (storage por `prestadora_id`, filas, requests). Queda abierto para cuando se aborde
+este bloque: (a) si conviene agregar un cuarto esquema `'por_uso_infraestructura'` con
+métricas propias a instrumentar, o (b) si alcanza con estimar tramos fijos por volumen
+esperado (chica/mediana/grande) sin medición real — evaluado con el Desarrollador el
+2026-07-11, sin resolver todavía. Ver también `docs/PENDIENTES.md`.
+
+**Decisión (2026-07-11): toda cuenta/infraestructura nueva se abre a nombre de prestadora-original,
+no de PLM Systems, hasta que se ejecute la migración multi-tenant.** Surgió al decidir a
+nombre de quién crear las cuentas nuevas de Cloudflare R2 y Backblaze B2 (pendiente #4 de
+`docs/PENDIENTES.md`). Fundamento: hoy toda la infraestructura existente (Supabase,
+Railway, Vercel — ver `No hacer commit/claves y contraseñas.txt`) ya está a nombre de
+prestadora-original; abrir cuentas nuevas a nombre de PLM Systems mientras el resto sigue en prestadora-original
+crearía una migración parcial no planificada — infraestructura repartida entre dos
+titulares sin que exista todavía el inventario/plan que `docs/Prompt_Claude_Code_PLM_Multitenant.md`
+exige como paso previo a tocar cualquier cosa de la migración real (ver también la sección
+"Sobre `docs/Prompt_Claude_Code_PLM_Multitenant.md`" de `CLAUDE.md`). Manteniendo un solo
+titular hasta ese momento, el día de la migración es "mover N cuentas de prestadora-original a PLM
+Systems" de forma pareja, en vez de tener que reconciliar cuentas sueltas que quedaron
+repartidas. Esta decisión aplica a **toda** cuenta/credencial nueva que se cree de acá en
+adelante, no solo a R2/B2 — se revierte únicamente cuando arranque formalmente la
+migración a PLM Systems como titular de la infraestructura.
+
 ### 3.6 RLS: centralizar el chequeo de tenant en una función, no repetir la subquery
 
 `schema_etapa2i.sql` (ver ejemplo real arriba) ya muestra el problema: **cada** policy repite
