@@ -1222,6 +1222,33 @@ esta corrida) — falta la prueba manual del flujo completo (alta de serie, chec
 salida, check-in, check-out, cancelar, marcar ausente) antes de dar por cerrada la Parte 1
 en los hechos, no solo en el código.
 
+## Actualización — Backup automático propio a R2 + B2 cerrado y verificado en producción (2026-07-11)
+
+Pendiente #4 de `docs/PENDIENTES.md` (backup independiente del nativo de Supabase, en
+almacenamiento de objetos, doble proveedor) cerrado de punta a punta. El workflow
+`.github/workflows/backup-diario.yml` ya venía escrito (cron diario 03:00 Arg +
+`workflow_dispatch`); esta sesión corrigió dos problemas que impedían que corriera con éxito
+en la realidad, no solo que existiera el código:
+
+1. **`pg_dump` v16 (Ubuntu default) vs. servidor Supabase v17.6**: `pg_dump` rechaza volcar
+   un servidor de versión mayor a la propia. Se agregó el repo oficial
+   `apt.postgresql.org` + su clave GPG e instaló `postgresql-client-17` específicamente
+   (`backup-diario.yml:17-25`).
+2. **Credenciales truncadas por transcripción en una sesión anterior**: el Access Key ID de
+   R2 tenía 31 caracteres (debía tener 32) y la Application Key de B2 tenía 30 (debía tener
+   31). Ni R2 ni B2 permiten volver a ver una clave ya creada, así que se generaron
+   reemplazos (`prestadora-original-backup-script-v2` en R2, `prestadora-original-backups-mirror-v2` en B2, ambos
+   acotados a su bucket específico) y se actualizó `backend/.env`, los secrets de GitHub y
+   `No hacer commit/claves y contraseñas.txt`.
+
+**Verificado en la realidad** (no solo por el mensaje de éxito del propio script): run
+`29171951217` → `completed success`; `ListObjectsV2Command` contra ambos buckets confirma el
+mismo archivo presente en los dos; se descargó de ambos buckets y se confirmó `gzip -t`
+válido, contenido real de `pg_dump` (63 `CREATE TABLE`) e idéntico byte a byte entre R2 y B2.
+**No se hizo una restauración completa dentro de una base Postgres viva** — no había un
+Postgres de prueba disponible en esta sesión; queda anotado en el detalle del pendiente #4
+como el único nivel de verificación no cubierto, en vez de darlo por hecho sin más.
+
 ## Problemas conocidos / deuda técnica
 
 _Registrar acá bugs conocidos o deuda técnica para la próxima sesión._
