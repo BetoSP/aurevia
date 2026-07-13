@@ -117,6 +117,33 @@ resuelto). Falta acordar si el catálogo de "circunstancias" arranca solo con es
 se agregan otros ya en esta primera vuelta (ej. eventos de `configuracion_notificaciones`
 que hoy son solo-email: vencimientos de documentación, alertas de Módulo 7, etc.).
 
+### E. Insistencia si el Coordinador no responde a la notificación de una alerta temprana/incidente
+
+Requerimiento planteado por el Desarrollador el 2026-07-13, todavía sin diseño: hoy ni el
+"Registrar aviso previo" (alertas tempranas, pendiente #20) ni la detección automática de
+ausencia notifican a nadie — solo quedan visibles en la pantalla de Continuidad del Panel, a
+la espera de que el Coordinador la esté mirando (ver hallazgo del pendiente #21). Cuando se
+resuelva el canal de notificación (email ya disponible vía `enviarEmailCoordinador`,
+`backend/src/utils/email.js`, mismo patrón que `revisarVencimientos`; WhatsApp sujeto a este
+documento), el Coordinador tiene que recibir un reintento/insistencia si no responde a la
+primera notificación, con estas dos condiciones explícitas del Desarrollador:
+
+- **El intervalo de reintento es configurable por prestadora** — nunca un número fijo en el
+  código (Regla 1 de `CLAUDE.md`), consistente con el resto de `configuracion_escalada_relevo`.
+- **El intervalo no es constante: se acorta a medida que se reduce el tiempo que falta para
+  que la guardia quede sin Asistente cubriendo.** Es decir, la urgencia de la insistencia
+  aumenta cuanto más cerca está el momento en que el Paciente queda sin cobertura, no es un
+  simple "cada X minutos" parejo durante todo el proceso.
+
+**Pregunta de diseño todavía abierta, no decidida:** ¿esta lógica de insistencia reutiliza el
+mismo mecanismo de `configuracion_escalada_relevo` (niveles con `minutos_demora`, que hoy
+escalan a quién se contacta — suplente → franquero → emergencia → familiar), o es un
+mecanismo separado, específico de "reenviar la misma notificación a la misma persona hasta
+que responda", independiente de a quién se está tratando de contactar en cada nivel? Ambos
+conceptos son de escalamiento por tiempo pero resuelven cosas distintas (a quién se avisa vs.
+cuántas veces se insiste con el mismo aviso) — falta que el Desarrollador decida si conviene
+una tabla/columna nueva o extender la existente, antes de diseñar la implementación.
+
 ## Qué NO se decide en este documento
 
 - No se elige todavía el motor de IA específico para el agente conversacional (más allá de
