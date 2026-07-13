@@ -126,7 +126,7 @@ la espera de que el Coordinador la esté mirando (ver hallazgo del pendiente #21
 resuelva el canal de notificación (email ya disponible vía `enviarEmailCoordinador`,
 `backend/src/utils/email.js`, mismo patrón que `revisarVencimientos`; WhatsApp sujeto a este
 documento), el Coordinador tiene que recibir un reintento/insistencia si no responde a la
-primera notificación, con estas dos condiciones explícitas del Desarrollador:
+primera notificación, con estas condiciones explícitas del Desarrollador:
 
 - **El intervalo de reintento es configurable por prestadora** — nunca un número fijo en el
   código (Regla 1 de `CLAUDE.md`), consistente con el resto de `configuracion_escalada_relevo`.
@@ -135,14 +135,43 @@ primera notificación, con estas dos condiciones explícitas del Desarrollador:
   aumenta cuanto más cerca está el momento en que el Paciente queda sin cobertura, no es un
   simple "cada X minutos" parejo durante todo el proceso.
 
-**Pregunta de diseño todavía abierta, no decidida:** ¿esta lógica de insistencia reutiliza el
-mismo mecanismo de `configuracion_escalada_relevo` (niveles con `minutos_demora`, que hoy
-escalan a quién se contacta — suplente → franquero → emergencia → familiar), o es un
-mecanismo separado, específico de "reenviar la misma notificación a la misma persona hasta
-que responda", independiente de a quién se está tratando de contactar en cada nivel? Ambos
-conceptos son de escalamiento por tiempo pero resuelven cosas distintas (a quién se avisa vs.
-cuántas veces se insiste con el mismo aviso) — falta que el Desarrollador decida si conviene
-una tabla/columna nueva o extender la existente, antes de diseñar la implementación.
+**Estructura en dos fases, aclarada por el Desarrollador el 2026-07-13** (esto resuelve la
+pregunta de diseño que había quedado abierta sobre si esto reutiliza o no
+`configuracion_escalada_relevo` — son dos fases secuenciales, no el mismo mecanismo):
+
+1. **Fase de notificación/reacción humana:** se avisa al Coordinador (con la insistencia de
+   intervalo variable descripta arriba) y se le da la oportunidad de resolver él mismo.
+2. **Fase automática, opcional por prestadora:** si pasa el tiempo configurado y el
+   Coordinador no reaccionó, **y solo si la prestadora activó esta opción**, recién ahí
+   entran solas las fases ya previstas en `configuracion_escalada_relevo` (Suplente →
+   Franquero → Personal de emergencia → Familiar). Si la prestadora no activó la
+   automatización, el sistema no toma ninguna acción por su cuenta — queda todo en manos del
+   Coordinador.
+
+**Coordinador alternativo (backup), requerimiento agregado el 2026-07-13:** cada prestadora
+tiene que poder configurar, opcionalmente, un segundo Coordinador al que se le empiecen a
+mandar las notificaciones si el primero no respondió dentro del plazo configurado — antes de
+(o en paralelo a) que entre la fase automática del punto 2. **Sin decidir todavía:** el orden
+exacto entre "insistirle más al Coordinador 1", "pasar al Coordinador 2" y "entrar en fase
+automática" — si son tres pasos secuenciales estrictos, o si el Coordinador 2 se activa en
+paralelo a seguir insistiéndole al primero. Falta definir con el Desarrollador antes de
+diseñar la tabla de configuración.
+
+**¿Es útil la IA en esta fase?** Pregunta que hizo el Desarrollador el 2026-07-13 — recomendación
+de Claude Code, no una decisión tomada:
+- **Sí, para redactar el contenido de la notificación con contexto útil** (no solo "hay un
+  problema", sino algo como "Guardia de [Paciente] sin cobertura en 40 min, sin Asistente
+  saliente, este Asistente ya avisó por temas de salud dos veces este mes") — esto ya estaba
+  cubierto por el punto 4 de este documento (el agente redacta/propone texto).
+- **Sí, más adelante, para sugerir el mejor suplente disponible** en la fase automática en vez
+  de seguir siempre el orden fijo de prioridad — pero esto depende de tener datos históricos
+  suficientes, por eso ya figura como diferido en `docs/BUILD_ORDER.md` ("IA Niveles 3-5 —
+  matching").
+- **No, para decidir si/cuándo pasar de una fase a la otra** (Coordinador 1 → Coordinador 2 →
+  fase automática) — esto tiene que seguir siendo una regla determinística por tiempo, igual
+  que ya hace `backend/src/utils/ausenciaAutomatica.js`, no un juicio de un modelo de IA: hay
+  un Paciente que puede quedar solo de por medio, y cualquier reclamo futuro necesita poder
+  explicarse con una regla clara de tiempo, no con "el modelo decidió esto en el momento".
 
 ## Qué NO se decide en este documento
 
