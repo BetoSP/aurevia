@@ -912,10 +912,11 @@ marcan acá como **[1.5 → confirmado]** — no se releva de nuevo, solo se pro
   nombre de marca ("prestadora-original Salud" en un título), y otras son **términos de negocio**
   como "Certificado prestadora-original" o "Exclusividad de facturación a prestadora-original" — estos últimos
   podrían necesitar renombrarse a un término genérico (p. ej. "Certificado de la
-  plataforma") en vez de simplemente parametrizar el nombre de marca. **Caso ambiguo —
-  no decido esto solo, queda señalado para que el usuario resuelva** si esos términos de
-  negocio se parametrizan (sustituyendo "prestadora-original" por el nombre de la prestadora) o se
-  genérican del todo.
+  plataforma") en vez de simplemente parametrizar el nombre de marca. **Caso ambiguo,
+  resuelto — ver 5.4bis**: el Desarrollador definió el diseño de 4 capas y, el 2026-07-13,
+  el nombre definitivo del certificado: **"Certificado de Aptitud"** (reemplaza
+  "Certificado prestadora-original" en todo el proyecto). "Exclusividad de facturación a prestadora-original" sigue
+  como tema aparte, ver pendiente #19 de `docs/PENDIENTES.md`.
 - `sitio-web/src/i18n/translations.js:17, 79, 149, 211, 281, 343, 354` — mensajes de
   WhatsApp y subtítulos con "prestadora-original" fijo.
 - `panel/src/lib/calcularCese.js:215` — mismo texto ya señalado en 1.5 (advertencia de
@@ -936,9 +937,9 @@ marcan acá como **[1.5 → confirmado]** — no se releva de nuevo, solo se pro
   mixtos ("Certificado prestadora-original" y similares) — **resuelto, ver 5.4bis** — no es un simple
   parametrizar/genericar, requiere un diseño de 4 capas.
 
-### 5.4bis Certificado prestadora-original — diseño de 4 capas (**resuelto con el usuario, 2026-07-12**)
+### 5.4bis Certificado de Aptitud (antes "Certificado prestadora-original") — diseño de 4 capas (**resuelto con el usuario, 2026-07-12; nombre definitivo confirmado 2026-07-13**)
 
-El caso "Certificado prestadora-original" no se resuelve sustituyendo el nombre de marca por el de
+El caso "Certificado de Aptitud" no se resuelve sustituyendo el nombre de marca por el de
 cada prestadora, ni tampoco genericándolo del todo — el usuario definió un diseño de 4
 capas independientes entre sí, en este orden de precedencia:
 
@@ -1069,7 +1070,7 @@ este documento.
 
 ### 5.9 Resumen — qué queda pendiente de decisión antes de tocar tablas
 
-1. **"Certificado prestadora-original" — resuelto (ver 5.4bis, 2026-07-12)**: diseño de 4 capas
+1. **"Certificado de Aptitud" (antes "Certificado prestadora-original") — resuelto (ver 5.4bis, 2026-07-12; nombre confirmado 2026-07-13)**: diseño de 4 capas
    (interruptor de certificación por prestadora, ente calificador propio o delegado a un
    tercero, reconocimiento de certificados de otro origen, visibilidad pública por
    certificado). Falta el diseño concreto de columnas/tabla, a abordar junto con el

@@ -63,7 +63,7 @@ reproponer sin resolver primero el riesgo legal de fondo.
 | Paciente | adulto mayor (salvo contexto clínico específico) |
 | Guardia | turno, jornada, servicio |
 | Proceso de Incorporación de Asistentes (uso interno — Panel y cualquier mención interna general del concepto; nunca en el sitio público, salvo que el usuario lo apruebe explícitamente como marketing) | "Filtro prestadora-original" (término retirado 2026-07-10, ver nota abajo — no usar ni siquiera internamente), "pipeline", mencionarlo en el sitio público bajo cualquier nombre |
-| Certificado prestadora-original | certificado genérico, diploma |
+| Certificado de Aptitud | certificado genérico, diploma, "Certificado prestadora-original" (nombre anterior, retirado 2026-07-13 por decisión explícita del Desarrollador — certifica aptitud para una tarea determinada, uso mayormente interno de la prestadora) |
 | Reporte diario | informe, planilla, parte |
 | Coordinador | supervisor, jefe, encargado |
 | Vínculo / Cese | contrato de trabajo, despido (salvo causal literal de despido) |

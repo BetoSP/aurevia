@@ -47,7 +47,7 @@ concepto general/interno, no para el nombre de esta pantalla.
 | 2 — Antecedentes penales | Consulta Registro Nacional de Reincidencia, renovación anual | Coordinador | 1-2 días |
 | 3 — Entrevista estructurada | Videollamada 30 min, evalúa competencia técnica/emocional/valores | Admin_prestadora | 1 día |
 | 4 — Referencias laborales | Mínimo 2 referencias verificadas por teléfono | Coordinador | 1-2 días |
-| 5 — Capacitación y certificación | 8hs online, aprobación mínima 80%, emite Certificado prestadora-original con QR | Sistema + aspirante | 1-2 días |
+| 5 — Capacitación y certificación | 8hs online, aprobación mínima 80%, emite Certificado de Aptitud con QR | Sistema + aspirante | 1-2 días |
 
 Estas 5 etapas post-postulación son exactamente `etapa_filtro` en `verificaciones_asistente`
 (`DATA_MODEL.md`) — mismos nombres, no inventar variantes: `postulacion`,
@@ -81,8 +81,8 @@ especialidades vinculadas al cuidado de personas — mismo catálogo que `especi
 `asistentes` (`DATA_MODEL.md`), no crear una lista paralela.
 
 **Beneficios que comunica el sitio**: trabajo registrado; honorarios acordados según
-especialidad y experiencia (sin publicar montos — ver regla abajo); Certificado prestadora-original con
-QR verificable; respaldo operativo permanente; aplicación propia de gestión de guardias;
+especialidad y experiencia (sin publicar montos — ver regla abajo); Certificado de Aptitud
+con QR verificable; respaldo operativo permanente; aplicación propia de gestión de guardias;
 capacitación continua.
 
 **Zonas de cobertura**: mismo catálogo de zona/municipios que la Sección E del formulario
@@ -182,7 +182,7 @@ de mapa que `PRD_02_Panel_Admin.md` Módulo 2/3, no duplicar implementación).
 8 horas online en 4 bloques (2hs c/u): 1) La persona mayor, 2) Cuidados esenciales, 3)
 Seguridad y prevención, 4) El rol prestadora-original (incluye uso de la app: check-in/out, reporte
 diario, registro de medicación, código de conducta). Evaluación: 20 preguntas de opción
-múltiple, aprobación mínima 80% (16 correctas). Emite Certificado prestadora-original digital (nombre,
+múltiple, aprobación mínima 80% (16 correctas). Emite Certificado de Aptitud digital (nombre,
 especialidad, fecha, QR verificable) — mismo `qr_token` que ya existe en `asistentes`
 (`DATA_MODEL.md`), no crear un segundo mecanismo de certificado.
 

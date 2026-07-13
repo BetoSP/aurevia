@@ -70,7 +70,7 @@ Botón "Check-out" habilitado recién después de las horas mínimas de la modal
 
 ### Mi Perfil
 Foto, datos personales, especialidades y zonas, estado de monotributo y seguro (con fecha de
-vencimiento), Certificado prestadora-original (ver QR, compartir), historial de evaluaciones recibidas.
+vencimiento), Certificado de Aptitud (ver QR, compartir), historial de evaluaciones recibidas.
 
 ## Alertas tempranas de ausencia (diseño, no implementado — ver pendiente #20 de `docs/PENDIENTES.md`)
 
