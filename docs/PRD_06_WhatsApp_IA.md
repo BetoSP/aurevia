@@ -1,12 +1,12 @@
 # PRD_06 — WhatsApp Business (Meta) + agente de IA asistiendo
 
-> ⚠️ **ESTADO: EN DISCUSIÓN — NO IMPLEMENTAR TODAVÍA.** Este documento registra el diseño tal
-> como se fue acordando en la conversación del 2026-07-11, pero varios puntos centrales
-> (alcance exacto del agente de IA, mecanismo de aprobación de plantillas ante Meta,
-> almacenamiento de credenciales) siguen abiertos y necesitan más discusión y decisión
-> explícita del Desarrollador antes de que Claude Code escriba una sola línea de código. No
-> asumir que lo escrito acá es un plan cerrado — es el punto de partida de la discusión, no
-> el final. Ver pendiente #9 de `docs/PENDIENTES.md`, que remite acá.
+> ⚠️ **ESTADO (actualizado 2026-07-13): puntos A-E ya decididos, falta kickoff explícito de
+> implementación.** Este documento registró el diseño acordado el 2026-07-11 con varios
+> puntos centrales abiertos; el 2026-07-13 el Desarrollador cerró los cinco puntos
+> pendientes (A-E, ver sección de abajo). **Esto no es todavía luz verde para escribir
+> código** — sigue haciendo falta que el Desarrollador dé el kickoff explícito de esta etapa
+> (mismo patrón que el resto del proyecto: una decisión de diseño aprobada no equivale a una
+> orden de implementar). Ver pendiente #9 de `docs/PENDIENTES.md`, que remite acá.
 
 ## Por qué existe este documento
 
@@ -51,10 +51,11 @@ consultar el historial de la conversación si hace falta el detalle de precios/t
      personal de emergencia, familiar) — siempre con el licenciatario en control de qué se
      manda finalmente.
 
-## Puntos todavía sin resolver — necesitan discusión antes de diseñar la implementación
+## Puntos A-E — decididos 2026-07-13
 
-Esta es la parte central de por qué el documento está marcado "en discusión". Ninguno de
-estos puntos tiene todavía un cierre real:
+Los cinco puntos que mantenían este documento "en discusión" ya tienen decisión explícita
+del Desarrollador. Se conserva el planteo original de cada uno (para contexto) seguido de
+la **decisión tomada**.
 
 ### A. Restricción de Meta sobre plantillas pre-aprobadas
 
@@ -62,60 +63,62 @@ Meta exige que cualquier mensaje que **inicia el negocio** (no una respuesta den
 24hs de que la otra persona escribió primero) use una plantilla pre-aprobada por Meta — no
 texto 100% libre generado en el momento. Un mensaje de escalada de relevo es, casi siempre,
 un mensaje que inicia el negocio (nadie del lado del suplente/franquero escribió primero).
-Falta decidir en detalle:
-- Cómo se integra el trámite de aprobación de Meta al flujo del Panel (¿el agente de IA
-  arma el paquete y el licenciatario solo confirma? ¿hay un estado "pendiente de aprobación
-  de Meta" visible en la pestaña Servicios?).
-- Qué pasa mientras una plantilla nueva está en trámite de aprobación (¿se usa una plantilla
-  genérica de respaldo? ¿se degrada a otro canal, como ya prevé el diseño de
-  `configuracion_escalada_relevo` para cuando `personal_emergencia` está vacío,
-  `docs/PRD_02_Panel_Admin.md:92-94`?).
-- Qué variables expone cada plantilla (nombre del Asistente ausente, Paciente, horario,
-  nivel de escalada) y cómo se mapean a los parámetros que Meta permite dentro de una
-  plantilla aprobada.
+
+**Decisión (2026-07-13):**
+- La IA arma el borrador de la plantilla (texto + variables); el licenciatario lo revisa/
+  edita y confirma; recién ahí se envía a Meta para aprobación. Estado visible en el Panel
+  (pestaña Servicios → Notificaciones) por plantilla: Borrador → Enviada a Meta → Aprobada /
+  Rechazada. Si Meta rechaza, la IA propone una corrección según el motivo del rechazo.
+- **Si un evento todavía no tiene ninguna plantilla aprobada, el aviso se manda por el canal
+  que sí está disponible (email, `enviarEmailCoordinador`) y la responsabilidad de tomar
+  acción pasa al Coordinador — el sistema y la IA tienen la responsabilidad de garantizar
+  que ese aviso efectivamente le llegue** (nunca queda silenciosamente sin canal ni sin
+  avisar a nadie mientras se espera la aprobación de Meta).
+- Variables de cada plantilla (nombre del Asistente ausente, Paciente, horario, nivel de
+  escalada) se mapean a los parámetros que Meta permite dentro de una plantilla aprobada —
+  detalle de implementación, no bloquea el diseño.
 
 ### B. Alcance exacto y límites de autonomía del agente de IA
 
 El Desarrollador pidió las tres tareas (redacción, trámite de aprobación, participación en
 respuestas entrantes) "y cualquier otra en la que pueda colaborar" — alcance deliberadamente
-abierto, pero eso es justamente lo que hay que acotar antes de construir algo. Falta definir,
-como mínimo:
-- Para la participación en respuestas entrantes: ¿el agente redacta una respuesta sugerida
-  que el licenciatario aprueba/edita antes de mandar (como un borrador), o puede responder
-  sin intervención humana en algunos casos (¿cuáles?) y no en otros?
-- Qué pasa si el agente no tiene claro qué responder — ¿escala a un humano siempre, nunca
-  decide "no sé" de forma silenciosa?
-- Cómo queda registrado en el sistema qué fue obra del agente vs. qué escribió/aprobó una
-  persona — por el mismo motivo por el que el reporte diario ya se documenta como "el
-  instrumento de defensa más poderoso ante cualquier demanda" (ver
-  `docs/Investigacion_Competencia Marketplace.md:10-12`): una conversación de WhatsApp real,
-  con terceros, en un contexto de guardias de cuidado domiciliario, tiene el mismo peso de
-  evidencia y el mismo riesgo si algo sale mal.
-- Motor de IA a usar (¿mismo proveedor que Niveles 1-2, Anthropic/Claude, ya documentado en
-  `docs/CONTEXT.md:158`? ¿o algo específico para manejo de conversación en tiempo real?).
+abierto, pero eso es justamente lo que había que acotar antes de construir algo.
+
+**Decisión (2026-07-13):** ningún mensaje entrante puede quedar sin respuesta. El Coordinador
+siempre ve lo que la IA respondió (registrado en el sistema, no oculto). Para situaciones
+comunes la IA puede actuar de forma automática — pero cuáles cuentan como "comunes" es
+**configurable por prestadora, caso por caso**, no una lista fija igual para todas. Cuando la
+IA no tiene una respuesta clara, avisa de inmediato al Coordinador en vez de decidir "no sé"
+en silencio o dejar el mensaje sin atender. Motor de IA: mismo proveedor que Niveles 1-2
+(Anthropic/Claude, `docs/CONTEXT.md:158`) salvo que la implementación encuentre un motivo
+técnico concreto para otra cosa.
 
 ### C. Almacenamiento de credenciales de Meta por prestadora
 
 Token de acceso, WABA ID y phone number ID de cada prestadora son credenciales de una cuenta
 externa con costo real y capacidad de enviar mensajes en su nombre — de sensibilidad
-comparable a una clave de API de pago. Falta decidir:
-- Dónde se guardan (¿tabla nueva `configuracion_whatsapp_prestadora` con columnas cifradas?
-  ¿un secreto gestionado fuera de la base, tipo vault?).
-- Quién puede verlas/editarlas en el Panel (¿solo `admin_prestadora`? ¿ni siquiera
-  `superadmin` debería poder leer el token en texto plano una vez guardado, similar a cómo
-  no se loguean sueldos ni certificados médicos, Regla 7 de `CLAUDE.md`?).
-- Cómo se verifica que la cuenta de Meta ingresada es realmente de esa prestadora (¿algún
-  paso de verificación, o se confía en que el propio licenciatario cargó su cuenta
-  correctamente?).
+comparable a una clave de API de pago.
+
+**Decisión (2026-07-13): Supabase Vault** (el mecanismo de secretos cifrados ya integrado en
+Supabase, en vez de una tabla propia con cifrado manual o un servicio externo nuevo) — un
+secreto de Vault por prestadora. El Panel nunca muestra el valor real una vez guardado (solo
+"configurado ✓" / botón "reemplazar", como un campo de contraseña). Solo el backend puede
+pedir el valor descifrado, y solo en el momento de mandar un mensaje — **ni siquiera
+`superadmin` puede leerlo en texto plano desde el Panel**, mismo criterio que sueldos/
+certificados médicos (Regla 7 de `CLAUDE.md`). Acceso para cargar/reemplazar el secreto
+acotado a `admin_prestadora` de esa prestadora únicamente.
 
 ### D. Catálogo inicial de eventos con WhatsApp saliente
 
 Hoy el único evento con lógica de negocio real que podría disparar un mensaje es la escalada
 de relevo (`configuracion_escalada_relevo`) — y la lógica de escalada en sí (Parte 2 de
 Módulo 6) todavía no está construida, solo el CRUD de configuración (pendiente #8, ya
-resuelto). Falta acordar si el catálogo de "circunstancias" arranca solo con ese evento, o si
-se agregan otros ya en esta primera vuelta (ej. eventos de `configuracion_notificaciones`
-que hoy son solo-email: vencimientos de documentación, alertas de Módulo 7, etc.).
+resuelto).
+
+**Decisión (2026-07-13):** el catálogo inicial arranca con **dos** eventos, no solo uno:
+escalada de relevo, y **vencimientos de documentación** (hoy solo-email vía
+`revisarVencimientos`/`backend/src/utils/vencimientos.js`) — el Desarrollador confirmó que
+este segundo caso también es importante desde esta primera vuelta.
 
 ### E. Insistencia si el Coordinador no responde a la notificación de una alerta temprana/incidente
 
@@ -151,11 +154,15 @@ pregunta de diseño que había quedado abierta sobre si esto reutiliza o no
 **Coordinador alternativo (backup), requerimiento agregado el 2026-07-13:** cada prestadora
 tiene que poder configurar, opcionalmente, un segundo Coordinador al que se le empiecen a
 mandar las notificaciones si el primero no respondió dentro del plazo configurado — antes de
-(o en paralelo a) que entre la fase automática del punto 2. **Sin decidir todavía:** el orden
-exacto entre "insistirle más al Coordinador 1", "pasar al Coordinador 2" y "entrar en fase
-automática" — si son tres pasos secuenciales estrictos, o si el Coordinador 2 se activa en
-paralelo a seguir insistiéndole al primero. Falta definir con el Desarrollador antes de
-diseñar la tabla de configuración.
+(o en paralelo a) que entre la fase automática del punto 2.
+
+**Decisión sobre el orden (2026-07-13):** el orden exacto entre "insistirle más al
+Coordinador 1", "pasar al Coordinador 2" y "entrar en fase automática" **depende de la
+premura de la situación** (cuánto tiempo falta para que el Paciente quede sin cobertura), y
+ese criterio de premura es a su vez **configurable por prestadora** — no un orden fijo igual
+para todas. Detalle de implementación pendiente: cómo se traduce "premura" en un número
+concreto de minutos/umbrales configurables (mismo patrón que el intervalo de reintento
+descripto arriba), a definir junto con el diseño de la tabla de configuración.
 
 **¿Es útil la IA en esta fase?** Pregunta que hizo el Desarrollador el 2026-07-13 — recomendación
 de Claude Code, no una decisión tomada:
@@ -175,12 +182,14 @@ de Claude Code, no una decisión tomada:
 
 ## Qué NO se decide en este documento
 
-- No se elige todavía el motor de IA específico para el agente conversacional (más allá de
-  la referencia a Anthropic/Claude ya usada en Niveles 1-2).
 - No se diseña la tabla de datos definitiva ni las rutas de backend — eso es trabajo de
-  implementación, posterior a que se cierren los puntos A-D de arriba.
+  implementación, que todavía necesita el kickoff explícito del Desarrollador (ver nota de
+  estado al inicio del documento), no autorizado solo por haber cerrado los puntos A-E.
 - No se estima costo ni estimación de tiempo — depende directamente de qué tan grande termine
-  siendo el alcance del agente de IA (punto B).
+  siendo el alcance real de la implementación una vez que arranque.
+- No se define todavía el número concreto de minutos/umbrales de "premura" del punto E — el
+  criterio (que depende de la premura y es configurable por prestadora) ya está decidido, el
+  número/mecanismo exacto es detalle de implementación.
 
 ## Cómo se relaciona con el resto del proyecto
 
