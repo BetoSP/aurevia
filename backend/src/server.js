@@ -9,6 +9,7 @@ import { panelUsuariosRouter } from './routes/panelUsuarios.js';
 import { panelConfiguracionRouter } from './routes/panelConfiguracion.js';
 import { configuracionPublicaRouter } from './routes/configuracionPublica.js';
 import { revisarVencimientos } from './utils/vencimientos.js';
+import { revisarAusenciasAutomaticas } from './utils/ausenciaAutomatica.js';
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,14 @@ revisarVencimientos().catch((err) => console.error('Error en revisión inicial d
 setInterval(() => {
   revisarVencimientos().catch((err) => console.error('Error en revisión de vencimientos:', err.message));
 }, UN_DIA_MS);
+
+// Margen de tolerancia se mide en minutos (no en días como los vencimientos), por eso
+// corre cada 5 minutos en vez de una vez por día.
+const CINCO_MINUTOS_MS = 5 * 60 * 1000;
+revisarAusenciasAutomaticas().catch((err) => console.error('Error en revisión inicial de ausencias automáticas:', err.message));
+setInterval(() => {
+  revisarAusenciasAutomaticas().catch((err) => console.error('Error en revisión de ausencias automáticas:', err.message));
+}, CINCO_MINUTOS_MS);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

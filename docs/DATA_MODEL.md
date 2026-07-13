@@ -255,8 +255,30 @@ constraints, los 15 policies de RLS). Resumen de las tablas:
 - **`guardias_tracking_gps`** — histórico de posiciones GPS durante una guardia activa (no solo
   el punto de checkin/checkout), ver nota Ley 25.326 en `SECURITY.md`.
 
-**Estado 2026-07-10: solo el schema de datos existe.** No hay rutas backend (`CRUD`) ni
-pantallas de Panel para ninguna de estas 8 tablas todavía — ver `docs/PROGRESS.md`.
+**Ampliación 2026-07-12 (`backend/src/db/schema_modulo6_guardias_03.sql`)** — detección
+automática de ausencia + alertas tempranas, diseñado con el Desarrollador el 2026-07-12 tras
+probar Módulo 6 Parte 2 en navegador (ver `docs/PENDIENTES.md` #20). Dos tablas nuevas:
+
+- **`configuracion_ausencia_automatica`** — un registro por prestadora (`prestadora_id`
+  `PRIMARY KEY`), con `activo` (interruptor: una prestadora puede preferir seguir marcando
+  ausente a mano) y `minutos_tolerancia_checkin` (margen desde `hora_inicio` sin `checkin_at`
+  antes de marcar la guardia `ausente` sola). Reemplaza al botón manual "marcar ausente" de
+  `GuardiaAcciones.jsx` como mecanismo **principal** — el botón queda como excepción/override.
+- **`alertas_tempranas_guardia`** — señales previas a que la ausencia se concrete.
+  `fuente` es `TEXT` libre **a propósito** (arquitectura enchufable: nuevas fuentes se suman
+  sin migración de columnas ni rediseño de esta tabla) — hoy solo `'aviso_telefonico'` (el
+  Asistente avisa que no concurre o llega tarde, con `motivo` de una lista fija para
+  estadísticas: salud/transporte/familiar/otro). Fuente futura documentada pero no
+  implementada: `'gps_salida_domicilio'` (depende de la PWA Asistentes, que no existe
+  todavía). `resuelto_at`/`resuelto_nota` cuando el Coordinador la marca atendida. El envío
+  automático de mensajes/llamadas de escalada **no** se implementa acá — depende de
+  `docs/PRD_06_WhatsApp_IA.md` ("en discusión, no implementar todavía"); por ahora la alerta
+  solo se hace visible en el Panel (`Continuidad.jsx`) para acción manual del Coordinador.
+
+**Estado 2026-07-12:** las 8 tablas originales de Módulo 6 tienen rutas de Panel construidas
+(`GuardiaAcciones.jsx`, `Continuidad.jsx`) — ver `docs/PROGRESS.md`. Las dos tablas nuevas de
+esta ampliación tienen código de Panel/backend escrito pero **el DDL todavía no se aplicó
+contra Supabase** — ver `docs/PENDIENTES.md` #20 para la condición de cierre.
 
 Diseño original (pre-Módulo 6, mantenido acá solo como referencia histórica de las columnas
 base que sí sobrevivieron a `guardias`):

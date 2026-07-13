@@ -13,6 +13,7 @@ export function Continuidad() {
   const { t } = useLocale();
   const { usuario } = useAuth();
   const [incidentes, setIncidentes] = useState([]);
+  const [alertas, setAlertas] = useState([]);
   const [estado, setEstado] = useState('cargando');
   const [error, setError] = useState(null);
   const [incidenteResolviendo, setIncidenteResolviendo] = useState(null);
@@ -23,17 +24,18 @@ export function Continuidad() {
     setEstado('cargando');
     setError(null);
     try {
-      const { data: incidentesData, error: errorIncidentes } = await supabase
-        .from('incidentes_relevo')
-        .select('*')
-        .is('resuelto_at', null)
-        .order('iniciado_at', { ascending: true });
+      const [{ data: incidentesData, error: errorIncidentes }, { data: alertasData, error: errorAlertas }] = await Promise.all([
+        supabase.from('incidentes_relevo').select('*').is('resuelto_at', null).order('iniciado_at', { ascending: true }),
+        supabase.from('alertas_tempranas_guardia').select('*').is('resuelto_at', null).order('detectado_at', { ascending: true }),
+      ]);
       if (errorIncidentes) throw errorIncidentes;
+      if (errorAlertas) throw errorAlertas;
 
       const idsGuardias = Array.from(
-        new Set(
-          (incidentesData ?? []).flatMap((i) => [i.guardia_entrante_id, i.guardia_saliente_id].filter(Boolean)),
-        ),
+        new Set([
+          ...(incidentesData ?? []).flatMap((i) => [i.guardia_entrante_id, i.guardia_saliente_id].filter(Boolean)),
+          ...(alertasData ?? []).map((a) => a.guardia_id),
+        ]),
       );
 
       const [{ data: guardiasData }, { data: nivelesData }] = await Promise.all([
@@ -70,7 +72,19 @@ export function Continuidad() {
         };
       });
 
+      const filasAlertas = (alertasData ?? []).map((a) => {
+        const g = guardiasPorId[a.guardia_id];
+        return {
+          ...a,
+          paciente_nombre: g ? pacientesPorId[g.paciente_id] || '—' : '—',
+          asistente_nombre: g ? asistentesPorId[g.asistente_id] || '—' : '—',
+          fecha: g?.fecha,
+          horario: g ? `${g.hora_inicio} – ${g.hora_fin}` : '—',
+        };
+      });
+
       setIncidentes(filas);
+      setAlertas(filasAlertas);
       setAsistentesDisponibles(asistentesData ?? []);
       setEstado('listo');
     } catch (err) {
@@ -78,6 +92,23 @@ export function Continuidad() {
       setEstado('error');
     }
   }, []);
+
+  async function resolverAlerta(alerta) {
+    if (!window.confirm(t.continuidad.confirmar_resolver_alerta)) return;
+    setActualizandoId(alerta.id);
+    try {
+      const { error: errorUpdate } = await supabase
+        .from('alertas_tempranas_guardia')
+        .update({ resuelto_at: new Date().toISOString() })
+        .eq('id', alerta.id);
+      if (errorUpdate) throw errorUpdate;
+      recargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActualizandoId(null);
+    }
+  }
 
   useEffect(() => {
     recargar();
@@ -142,6 +173,33 @@ export function Continuidad() {
               )}
               <Button onClick={() => setIncidenteResolviendo(i)} disabled={actualizandoId === i.id}>
                 {t.continuidad.resolver}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </EstadoLista>
+
+      <h2>{t.continuidad.alertas_tempranas_titulo}</h2>
+      <p className="panel-explicacion">{t.continuidad.alertas_tempranas_explicacion}</p>
+
+      <EstadoLista
+        estado={estado}
+        error={null}
+        vacio={estado === 'listo' && alertas.length === 0}
+        recargar={recargar}
+        mensajeVacio={t.continuidad.alertas_tempranas_vacio}
+      >
+        {alertas.map((a) => (
+          <div key={a.id} className="panel-guardia-card guardia-ausente">
+            <div>
+              <strong>{a.fecha} · {a.horario}</strong> · {t.continuidad.col_paciente}: {a.paciente_nombre}
+              <div>{t.continuidad.col_ausente}: {a.asistente_nombre}</div>
+              <div>{t.continuidad.fuente_aviso_telefonico}</div>
+              {a.motivo && <div>{t.continuidad.col_motivo}: {t.guardias.detalle[`aviso_previo_motivo_${a.motivo}`] || a.motivo}</div>}
+            </div>
+            <div className="panel-modal-acciones">
+              <Button onClick={() => resolverAlerta(a)} disabled={actualizandoId === a.id}>
+                {t.continuidad.resolver_alerta}
               </Button>
             </div>
           </div>

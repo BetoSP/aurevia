@@ -13,6 +13,7 @@ export function GuardiaAcciones({ guardia, onClose, onActualizada }) {
   const [medioTransporte, setMedioTransporte] = useState('');
   const [cancelacionOrigen, setCancelacionOrigen] = useState('');
   const [cancelacionAlcance, setCancelacionAlcance] = useState('');
+  const [avisoPrevioMotivo, setAvisoPrevioMotivo] = useState('');
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState(null);
 
@@ -89,6 +90,29 @@ export function GuardiaAcciones({ guardia, onClose, onActualizada }) {
     if (errorIncidente) {
       setProcesando(false);
       setError(errorIncidente.message);
+      return;
+    }
+
+    await onActualizada();
+    setProcesando(false);
+    onClose();
+  }
+
+  async function handleRegistrarAvisoPrevio() {
+    if (!window.confirm(t.guardias.detalle.confirmar_aviso_previo)) return;
+    setError(null);
+    setProcesando(true);
+
+    const { error: errorAlerta } = await supabase.from('alertas_tempranas_guardia').insert({
+      prestadora_id: usuario.prestadora_id,
+      guardia_id: guardia.id,
+      fuente: 'aviso_telefonico',
+      motivo: avisoPrevioMotivo,
+      reportado_por: usuario.id,
+    });
+    if (errorAlerta) {
+      setProcesando(false);
+      setError(errorAlerta.message);
       return;
     }
 
@@ -194,6 +218,32 @@ export function GuardiaAcciones({ guardia, onClose, onActualizada }) {
               disabled={procesando || !cancelacionOrigen || !cancelacionAlcance}
             >
               {t.guardias.detalle.cancelar_guardia}
+            </Button>
+          </div>
+        )}
+
+        {puedeMarcarAusente && (
+          <div className="panel-resultado-calculo">
+            <h3>{t.guardias.detalle.aviso_previo_titulo}</h3>
+            <FormField
+              label={t.guardias.detalle.aviso_previo_motivo}
+              name="aviso_previo_motivo"
+              type="select"
+              value={avisoPrevioMotivo}
+              onChange={(e) => setAvisoPrevioMotivo(e.target.value)}
+            >
+              <option value="">{t.guardias.nueva_guardia.elegir}</option>
+              <option value="salud">{t.guardias.detalle.aviso_previo_motivo_salud}</option>
+              <option value="transporte">{t.guardias.detalle.aviso_previo_motivo_transporte}</option>
+              <option value="familiar">{t.guardias.detalle.aviso_previo_motivo_familiar}</option>
+              <option value="otro">{t.guardias.detalle.aviso_previo_motivo_otro}</option>
+            </FormField>
+            <Button
+              variant="secondary"
+              onClick={handleRegistrarAvisoPrevio}
+              disabled={procesando || !avisoPrevioMotivo}
+            >
+              {t.guardias.detalle.registrar_aviso_previo}
             </Button>
           </div>
         )}
