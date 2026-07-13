@@ -42,9 +42,9 @@ CREATE POLICY "coordinador_lee_configuracion_ausencia_automatica" ON configuraci
     AND EXISTS (SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'coordinador')
   );
 
--- Seed para prestadora-original (única prestadora real hoy, mismo UUID fijo que db/tenantTemporal.js)
--- con el valor por defecto de la columna — sin esta fila, el cron de ausencia automática
--- no tiene nada que revisar para prestadora-original.
+-- Seed para prestadora-original (única prestadora real a la fecha de esta migración, UUID fijo
+-- 874f54d7-4383-4d54-8b9f-f51d02f0dd11) con el valor por defecto de la columna — sin
+-- esta fila, el cron de ausencia automática no tiene nada que revisar para esa prestadora.
 INSERT INTO configuracion_ausencia_automatica (prestadora_id)
 VALUES ('874f54d7-4383-4d54-8b9f-f51d02f0dd11')
 ON CONFLICT (prestadora_id) DO NOTHING;

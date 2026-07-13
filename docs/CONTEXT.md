@@ -7,7 +7,7 @@
 
 ## Modelo de negocio (lo mínimo que el código necesita saber)
 
-- Familias solicitan un servicio → prestadora-original asigna un Asistente Integral (empresa directa,
+- Familias solicitan un servicio → la prestadora asigna un Asistente Integral (empresa directa,
   fase actual) → evoluciona a marketplace (familia elige directamente) y B2B (obras
   sociales / prepagas, y coordinación de prestadoras terceras).
 - Precio de referencia de lanzamiento: **nunca hardcodear** — se carga desde configuración
@@ -123,8 +123,8 @@ Etapa 2 — Panel de administración
   propia (`panel/src/pages/Familias.jsx` + `familias/FamiliaDetalle.jsx`) muestra contacto y
   Pacientes; guardias activas/historial de reportes/alertas activas quedan marcadas como "no
   disponible todavía" porque dependen de datos que solo genera la PWA de Asistentes (Etapa
-  3, no construida). El lado Asistente del mecanismo de cuentas (depende de una UI de Filtro
-  prestadora-original que no existe) sigue afuera.
+  3, no construida). El lado Asistente del mecanismo de cuentas (depende de una UI del Proceso
+  de Incorporación de Asistentes que no existe) sigue afuera.
 
   Módulo 6 (Guardias), estado 2026-07-10: solo el schema de datos está construido y
   verificado contra Supabase real (`backend/src/db/schema_modulo6_guardias.sql`, 8 tablas
@@ -180,7 +180,7 @@ export const T = {
 
 **Regla de slogan (resuelta 2026-07-09): no hay una forma "definitiva" — conviven dos, según
 contexto de uso**, siguiendo la regla de voz de marca ya definida en
-`docs/prestadora-original_Fundacional_v3.pdf` sección 5.2 ("Voz: primera persona del plural: 'En prestadora-original
+`docs/Exclusivo prestadora-original/prestadora-original_Fundacional_v3.pdf` sección 5.2 ("Voz: primera persona del plural: 'En prestadora-original
 verificamos...', 'Nuestros Asistentes...'"):
 
 - **"Cuida tus afectos"** (imperativo, segunda persona) — el sitio le habla directamente a
@@ -188,7 +188,7 @@ verificamos...', 'Nuestros Asistentes...'"):
   SEO/clic. Es la forma correcta en `T.hero_title` (`sitio-web/src/i18n/translations.js`) y
   en la meta description de `/` (`docs/PRD_01_Sitio_Web.md`).
 - **"Cuidamos tus afectos"** (primera persona del plural, voz institucional) — prestadora-original habla
-  de sí misma: el logo/isotipo (`prestadora-original_Manual_Identidad_v1.html`, correcto así, no tocar),
+  de sí misma: el logo/isotipo (`docs/Exclusivo prestadora-original/prestadora-original_Manual_Identidad_v1.html`, correcto así, no tocar),
   taglines de footer, la ficha de identidad de marca. Hoy el footer del sitio
   (`sitio-web/src/components/Footer.jsx`) no tiene ningún tagline — si se agrega uno a
   futuro, esta es la forma que le corresponde.

@@ -67,7 +67,7 @@ export function GuardiaAcciones({ guardia, onClose, onActualizada }) {
       return;
     }
 
-    // Busca si había un Asistente de prestadora-original cubriendo justo antes, el mismo día, para
+    // Busca si había un Asistente de la prestadora cubriendo justo antes, el mismo día, para
     // este Paciente — si no hay ninguna, es el caso "Ausente sin relevo previo" del
     // glosario de CLAUDE.md (ej. primera guardia del día) y guardia_saliente_id queda NULL.
     const { data: candidatas } = await supabase

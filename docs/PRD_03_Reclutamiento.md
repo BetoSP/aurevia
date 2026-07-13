@@ -1,6 +1,6 @@
 # PRD_03 — Reclutamiento (Sitio de Captación + Postulación + Verificación)
 
-> Fuente: `docs/prestadora-original_PRD_Reclutamiento_v1.pdf` (v1.0, Mayo 2026). Condensado para
+> Fuente: `docs/Exclusivo prestadora-original/prestadora-original_PRD_Reclutamiento_v1.pdf` (v1.0, Mayo 2026). Condensado para
 > ejecución directa, con las siguientes correcciones respecto del original: (1) el original
 > menciona un nombre propio ("Alberto Sánchez") como responsable de entrevistas —
 > reemplazado por "Inversor" o "Admin_prestadora", igual que en el resto de
@@ -34,11 +34,11 @@ de negocio explícita al respecto.
 
 ## Proceso de Incorporación de Asistentes — 6 etapas
 
-**Nota de nomenclatura (2026-07-10):** esta tabla es la que directamente alimenta las
-pantallas de Panel (Módulo 2/4 de `PRD_02_Panel_Admin.md`, tabla `verificaciones_asistente`)
-— dentro del Panel, uso interno, se llama "Proceso de Incorporación de Asistentes", nunca
-"Filtro prestadora-original" (ver glosario de `CLAUDE.md`). "Filtro prestadora-original" queda reservado para el
-concepto general/interno, no para el nombre de esta pantalla.
+**Nota de nomenclatura (corregida 2026-07-10):** esta tabla es la que directamente alimenta
+las pantallas de Panel (Módulo 2/4 de `PRD_02_Panel_Admin.md`, tabla `verificaciones_asistente`)
+— dentro del Panel, uso interno, se llama "Proceso de Incorporación de Asistentes". El nombre
+anterior ("Filtro prestadora-original") se retiró por completo, en cualquier contexto interno o público
+(ver glosario de `CLAUDE.md`) — no reintroducirlo ni siquiera como "concepto general".
 
 | Etapa | Descripción | Responsable | SLA |
 |---|---|---|---|

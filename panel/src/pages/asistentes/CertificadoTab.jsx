@@ -2,16 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresa } from '../../context/EmpresaContext';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { EstadoLista } from '../../components/layout/EstadoLista';
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://prestadora-originalsalud.com.ar';
-
 export function CertificadoTab({ asistente }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
+  const { empresa } = useEmpresa();
+  const siteUrl = import.meta.env.VITE_SITE_URL || (empresa?.dominio ? `https://${empresa.dominio}` : '');
   const [certificado, setCertificado] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [estado, setEstado] = useState('cargando');
@@ -34,12 +35,12 @@ export function CertificadoTab({ asistente }) {
       return;
     }
     setCertificado(data);
-    if (data) {
-      const url = `${SITE_URL}/asistente/${asistente.qr_token}`;
+    if (data && siteUrl) {
+      const url = `${siteUrl}/asistente/${asistente.qr_token}`;
       setQrDataUrl(await QRCode.toDataURL(url, { width: 280, margin: 1 }));
     }
     setEstado('listo');
-  }, [asistente.id, asistente.qr_token]);
+  }, [asistente.id, asistente.qr_token, siteUrl]);
 
   useEffect(() => {
     recargar();
@@ -85,7 +86,7 @@ export function CertificadoTab({ asistente }) {
               <>
                 <img src={qrDataUrl} alt={t.asistentes.certificado.titulo} width={280} height={280} />
                 <div>
-                  <a href={qrDataUrl} download={`certificado-prestadora-original-${asistente.id}.png`}>
+                  <a href={qrDataUrl} download={`certificado-${asistente.id}.png`}>
                     <Button variant="secondary">{t.asistentes.certificado.descargar_qr}</Button>
                   </a>
                 </div>

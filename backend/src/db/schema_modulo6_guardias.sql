@@ -233,7 +233,7 @@ CREATE POLICY "coordinador_lee_personal_emergencia" ON personal_emergencia
 -- ============================================================================
 -- 5. INCIDENTES_RELEVO — máquina de estados del protocolo de escalada (punto 4).
 --    guardia_saliente_id es NULLABLE a propósito: contempla el caso "ausente sin
---    handoff" (primera guardia del día, nadie de prestadora-original estaba presente antes),
+--    handoff" (primera guardia del día, nadie de la prestadora estaba presente antes),
 --    identificado como el de mayor riesgo porque el paciente puede quedar
 --    completamente solo. guardia_entrante_id es siempre obligatorio — ese es el
 --    Asistente que no se presentó.

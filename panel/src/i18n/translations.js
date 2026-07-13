@@ -19,7 +19,7 @@ export const T = {
       buscar: 'Buscar por nombre, email o teléfono',
       todos: 'Todos',
       nota_interna: 'Nota interna',
-      nota_interna_placeholder: 'Solo la ve el equipo de prestadora-original',
+      nota_interna_placeholder: 'Solo la ve el equipo de la prestadora',
     },
     nav: {
       dashboard: 'Dashboard',
@@ -36,7 +36,6 @@ export const T = {
     },
     auth: {
       titulo: 'Panel de Administración',
-      subtitulo: 'prestadora-original Salud',
       email: 'Email',
       password: 'Contraseña',
       ingresar: 'Ingresar',
@@ -326,10 +325,10 @@ export const T = {
         titulo: 'Score de Riesgo de Reclasificación',
         explicacion: 'Indicador 0-100 de probabilidad de que un vínculo monotributo sea recalificado como dependencia. Los pesos de cada indicador vienen de escalas_legales.',
         indicadores: {
-          exclusividad_facturacion: 'Exclusividad de facturación a prestadora-original',
+          exclusividad_facturacion: 'Exclusividad de facturación a la prestadora',
           antiguedad_vinculo: 'Antigüedad prolongada del vínculo',
           horas_semanales_promedio: 'Horas semanales elevadas',
-          herramientas_provistas: 'Herramientas/uniforme provisto por prestadora-original',
+          herramientas_provistas: 'Herramientas/uniforme provisto por la prestadora',
           horario_fijo_impuesto: 'Horario fijo impuesto',
           exclusividad_zona: 'Exclusividad de zona asignada',
           supervision_directa: 'Nivel de supervisión directa',
@@ -500,7 +499,7 @@ export const T = {
     },
     lista_precios: {
       titulo: 'Lista de Precios',
-      explicacion: 'Referencia interna de uso del equipo de prestadora-original. Nunca se muestra a Familias ni en ningún medio público — cada Prestación particular parte de este valor y se ajusta a mano según lo que se acuerde con cada Familia.',
+      explicacion: 'Referencia interna de uso del equipo de la prestadora. Nunca se muestra a Familias ni en ningún medio público — cada Prestación particular parte de este valor y se ajusta a mano según lo que se acuerde con cada Familia.',
       buscar: 'Buscar por tipo de servicio o modalidad',
       nuevo: 'Nuevo precio de lista',
       col_tipo_servicio: 'Tipo de servicio',
@@ -588,7 +587,7 @@ export const T = {
       buscar: 'Search by name, email or phone',
       todos: 'All',
       nota_interna: 'Internal note',
-      nota_interna_placeholder: 'Only visible to the prestadora-original team',
+      nota_interna_placeholder: 'Only visible to the provider team',
     },
     nav: {
       dashboard: 'Dashboard',
@@ -605,7 +604,6 @@ export const T = {
     },
     auth: {
       titulo: 'Admin Panel',
-      subtitulo: 'prestadora-original Salud',
       email: 'Email',
       password: 'Password',
       ingresar: 'Log in',
@@ -895,10 +893,10 @@ export const T = {
         titulo: 'Reclassification Risk Score',
         explicacion: '0-100 indicator of the likelihood that an independent-contractor relationship gets reclassified as employment. Each indicator weight comes from escalas_legales.',
         indicadores: {
-          exclusividad_facturacion: 'Exclusive billing to prestadora-original',
+          exclusividad_facturacion: 'Exclusive billing to the provider',
           antiguedad_vinculo: 'Long-standing relationship',
           horas_semanales_promedio: 'High weekly hours',
-          herramientas_provistas: 'Tools/uniform provided by prestadora-original',
+          herramientas_provistas: 'Tools/uniform provided by the provider',
           horario_fijo_impuesto: 'Imposed fixed schedule',
           exclusividad_zona: 'Exclusive assigned zone',
           supervision_directa: 'Level of direct supervision',
@@ -1069,7 +1067,7 @@ export const T = {
     },
     lista_precios: {
       titulo: 'Price List',
-      explicacion: 'Internal reference for the prestadora-original team only. Never shown to Families or in any public channel — each individual Service Agreement starts from this value and is adjusted by hand for what is agreed with each Family.',
+      explicacion: 'Internal reference for the provider team only. Never shown to Families or in any public channel — each individual Service Agreement starts from this value and is adjusted by hand for what is agreed with each Family.',
       buscar: 'Search by service type or mode',
       nuevo: 'New list price',
       col_tipo_servicio: 'Service type',
@@ -1157,7 +1155,7 @@ export const T = {
       buscar: 'Buscar por nome, email ou telefone',
       todos: 'Todos',
       nota_interna: 'Nota interna',
-      nota_interna_placeholder: 'Visível apenas para a equipe prestadora-original',
+      nota_interna_placeholder: 'Visível apenas para a equipe da prestadora',
     },
     nav: {
       dashboard: 'Painel',
@@ -1174,7 +1172,6 @@ export const T = {
     },
     auth: {
       titulo: 'Painel de Administração',
-      subtitulo: 'prestadora-original Salud',
       email: 'Email',
       password: 'Senha',
       ingresar: 'Entrar',
@@ -1464,10 +1461,10 @@ export const T = {
         titulo: 'Score de Risco de Reclassificação',
         explicacion: 'Indicador de 0 a 100 da probabilidade de que um vínculo autônomo seja reclassificado como relação de emprego. O peso de cada indicador vem de escalas_legales.',
         indicadores: {
-          exclusividad_facturacion: 'Faturamento exclusivo para a prestadora-original',
+          exclusividad_facturacion: 'Faturamento exclusivo para a prestadora',
           antiguedad_vinculo: 'Vínculo de longa data',
           horas_semanales_promedio: 'Alta carga horária semanal',
-          herramientas_provistas: 'Ferramentas/uniforme fornecidos pela prestadora-original',
+          herramientas_provistas: 'Ferramentas/uniforme fornecidos pela prestadora',
           horario_fijo_impuesto: 'Horário fixo imposto',
           exclusividad_zona: 'Zona exclusiva atribuída',
           supervision_directa: 'Nível de supervisão direta',
@@ -1638,7 +1635,7 @@ export const T = {
     },
     lista_precios: {
       titulo: 'Lista de Preços',
-      explicacion: 'Referência interna de uso da equipe prestadora-original. Nunca é mostrada às Famílias nem em nenhum meio público — cada Prestação particular parte deste valor e é ajustada manualmente conforme o combinado com cada Família.',
+      explicacion: 'Referência interna de uso da equipe da prestadora. Nunca é mostrada às Famílias nem em nenhum meio público — cada Prestação particular parte deste valor e é ajustada manualmente conforme o combinado com cada Família.',
       buscar: 'Buscar por tipo de serviço ou modalidade',
       nuevo: 'Novo preço de lista',
       col_tipo_servicio: 'Tipo de serviço',

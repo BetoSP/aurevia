@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { supabase } from '../db/connection.js';
-import { prestadora-original_PRESTADORA_ID } from '../db/tenantTemporal.js';
+import { resolverPrestadoraPublica } from '../middleware/resolverPrestadoraPublica.js';
 import { enviarEmailCoordinador } from '../utils/email.js';
 
 export const postulacionAsistenteRouter = Router();
 
 const IDIOMAS_SOPORTADOS = ['es-AR', 'en', 'pt-BR'];
 
-postulacionAsistenteRouter.post('/', async (req, res) => {
+postulacionAsistenteRouter.post('/', resolverPrestadoraPublica, async (req, res) => {
   const {
     nombre, dni, telefono, email, especialidades, zonas, disponibilidad,
     anios_experiencia, situacion_fiscal, como_conocio, mensaje, idioma,
@@ -28,7 +28,7 @@ postulacionAsistenteRouter.post('/', async (req, res) => {
     como_conocio: como_conocio ?? null,
     mensaje: mensaje ?? null,
     idioma: IDIOMAS_SOPORTADOS.includes(idioma) ? idioma : 'es-AR',
-    prestadora_id: prestadora-original_PRESTADORA_ID,
+    prestadora_id: req.prestadoraPublica.prestadora_id,
   });
 
   if (error) {
@@ -39,7 +39,7 @@ postulacionAsistenteRouter.post('/', async (req, res) => {
   try {
     await enviarEmailCoordinador({
       evento: 'nueva_postulacion_asistente',
-      prestadoraId: prestadora-original_PRESTADORA_ID,
+      prestadoraId: req.prestadoraPublica.prestadora_id,
       asunto: `Nueva postulación de Asistente — ${nombre}`,
       texto: `Nombre: ${nombre}\nDNI: ${dni}\nTeléfono: ${telefono}\nEmail: ${email}\nEspecialidades: ${especialidades}\nZonas: ${zonas}\nDisponibilidad: ${disponibilidad}\nSituación fiscal: ${situacion_fiscal}`,
     });

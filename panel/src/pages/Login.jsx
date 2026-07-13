@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../i18n/LocaleContext';
 import { useAuth } from '../context/AuthContext';
+import { useEmpresa } from '../context/EmpresaContext';
 import { FormField } from '../components/ui/FormField';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -9,6 +10,7 @@ import { Alert } from '../components/ui/Alert';
 export function Login() {
   const { t } = useLocale();
   const { login, session, usuario } = useAuth();
+  const { empresa } = useEmpresa();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,7 +45,7 @@ export function Login() {
     <div className="login-pantalla">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>{t.auth.titulo}</h1>
-        <p className="login-subtitulo">{t.auth.subtitulo}</p>
+        <p className="login-subtitulo">{empresa?.nombre ?? ''}</p>
 
         {error && <Alert variant="error">{error}</Alert>}
 

@@ -15,9 +15,17 @@ function requiereAdminOSuperior(req, res, next) {
 
 panelConfiguracionRouter.use(requiereRolPanel, requiereAdminOSuperior);
 
-// --- Datos de la empresa ---
+// --- Datos de la prestadora (configuracion_prestadora, ver schema_multitenant_04.sql —
+//     reemplaza el singleton configuracion_empresa: cada prestadora tiene su propia fila) ---
 panelConfiguracionRouter.get('/empresa', async (req, res) => {
-  const { data, error } = await supabase.from('configuracion_empresa').select('*').eq('id', 1).single();
+  const prestadoraId = req.usuarioPanel.rol === 'superadmin' && req.query.prestadora_id
+    ? req.query.prestadora_id
+    : req.usuarioPanel.prestadoraId;
+  const { data, error } = await supabase
+    .from('configuracion_prestadora')
+    .select('*')
+    .eq('prestadora_id', prestadoraId)
+    .single();
   if (error) return res.status(500).json({ error: error.message });
   res.json({ empresa: data });
 });
@@ -25,9 +33,9 @@ panelConfiguracionRouter.get('/empresa', async (req, res) => {
 panelConfiguracionRouter.patch('/empresa', async (req, res) => {
   const { nombre, telefono, whatsapp_numero, email, dominio, zona_cobertura_texto } = req.body;
   const { error } = await supabase
-    .from('configuracion_empresa')
+    .from('configuracion_prestadora')
     .update({ nombre, telefono, whatsapp_numero, email, dominio, zona_cobertura_texto, updated_at: new Date().toISOString() })
-    .eq('id', 1);
+    .eq('prestadora_id', req.usuarioPanel.prestadoraId);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });

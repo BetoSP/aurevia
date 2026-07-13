@@ -97,7 +97,7 @@ de negocio, no solo de diseño.
   lo hacen sin un sistema visual reconocible — ahí también hay espacio para diferenciarse.
 
 
-> Fuente: `prestadora-original_Manual_Identidad_v1.html` + `prestadora-original_PROMPT_MAESTRO_v1.md` Parte B.
+> Fuente: `docs/Exclusivo prestadora-original/prestadora-original_Manual_Identidad_v1.html` + `prestadora-original_PROMPT_MAESTRO_v1.md` Parte B.
 > Advertencia que hay que respetar: el manual se declara "Provisional — identidad
 > definitiva pendiente de definición". Construir el sistema de estilos de forma
 > centralizada (variables CSS, nunca hardcodeado por componente) para que un reemplazo

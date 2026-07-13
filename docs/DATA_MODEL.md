@@ -137,7 +137,7 @@ Nota: `etapas_verificacion` como columna JSONB **no se usa** en este schema — 
 por la tabla normalizada `verificaciones_asistente` de abajo, que permite filtrar y auditar
 cada etapa del Proceso de Incorporación de Asistentes individualmente (patrón adoptado de
 Money Suite, tabla `verification_records`, adaptado a la terminología y a las 5 etapas
-oficiales de prestadora-original en vez de sus 8 etapas genéricas).
+oficiales del sistema en vez de sus 8 etapas genéricas).
 
 **Actualizado 2026-07-10:** lo que esta nota describía como plan futuro ya está implementado
 — la tabla `prestadoras` existe y `prestadora_id` es `NOT NULL` en `asistentes` y en las
@@ -191,7 +191,7 @@ CREATE TABLE validaciones_faciales (
 );
 ```
 
-(patrón adoptado de Money Suite, tabla `facial_validations` — el diseño oficial de prestadora-original
+(patrón adoptado de Money Suite, tabla `facial_validations` — el diseño oficial del sistema
 no incluye check-in biométrico en cada guardia, solo en el reclutamiento; no agregar el
 campo `booking_id`/`guardia_id` salvo que el negocio decida extender la biometría al check-in.)
 
@@ -449,7 +449,7 @@ La tabla `aspirantes` (y la columna `asistentes.aspirante_id` que la referenciab
 eliminaron en `schema_etapa2k.sql` por ser código muerto: quedaba vacía, con RLS que nadie
 ejercitaba, y desalineaba la documentación del flujo real. Si en el futuro se necesita un
 estado explícito "en evaluación, todavía no es Asistente" (por ejemplo al adoptar
-`docs/prestadora-original_PRD_Reclutamiento_v1.pdf` en una futura Etapa 3), evaluar recrearla en ese
+`docs/Exclusivo prestadora-original/prestadora-original_PRD_Reclutamiento_v1.pdf` en una futura Etapa 3), evaluar recrearla en ese
 momento con el flujo real que se vaya a implementar, no reintroducir esta versión sin uso.
 
 ## Etapa 1 (Supabase/Postgres desde el día uno — sin paso intermedio por MySQL)

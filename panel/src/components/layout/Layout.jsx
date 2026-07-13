@@ -1,17 +1,19 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresa } from '../../context/EmpresaContext';
 import { esAdminOSuperior } from '../../lib/roles';
 import { LOCALES } from '../../i18n/translations';
 
 export function Layout() {
   const { t, locale, setLocale } = useLocale();
   const { usuario, logout } = useAuth();
+  const { empresa } = useEmpresa();
 
   return (
     <div className="panel-layout">
       <aside className="panel-sidebar">
-        <div className="panel-logo">prestadora-original Salud</div>
+        <div className="panel-logo">{empresa?.nombre ?? ''}</div>
         <nav>
           <NavLink to="/" end>
             {t.nav.dashboard}

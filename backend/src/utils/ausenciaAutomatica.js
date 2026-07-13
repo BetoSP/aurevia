@@ -47,7 +47,7 @@ export async function revisarAusenciasAutomaticas() {
 }
 
 // Misma lógica que handleMarcarAusente en panel/src/pages/guardias/GuardiaAcciones.jsx:
-// busca si había un Asistente de prestadora-original (o la prestadora que corresponda) cubriendo justo
+// busca si había un Asistente de la prestadora cubriendo justo
 // antes, el mismo día, para este Paciente. Si no hay ninguna, es "Ausente sin relevo
 // previo" (glosario de CLAUDE.md) y guardia_saliente_id queda NULL.
 async function marcarAusenteYCrearIncidente({ guardia, prestadoraId }) {

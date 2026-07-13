@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresa } from '../../context/EmpresaContext';
 import { esAdminOSuperior } from '../../lib/roles';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +12,7 @@ import { generarCertificadoTrabajo, generarCertificadoRemuneracionesServicios, d
 export function PerfilTab({ asistente, onActualizado }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
+  const { empresa } = useEmpresa();
   const esAdmin = esAdminOSuperior(usuario?.rol);
   const [form, setForm] = useState({
     especialidades: (asistente.especialidades || []).join(', '),
@@ -63,11 +65,11 @@ export function PerfilTab({ asistente, onActualizado }) {
   }
 
   function descargarCertificadoTrabajo() {
-    descargarPDF(generarCertificadoTrabajo({ asistente }), `certificado-trabajo-${asistente.nombre}.pdf`);
+    descargarPDF(generarCertificadoTrabajo({ asistente, nombreEmpresa: empresa?.nombre ?? '' }), `certificado-trabajo-${asistente.nombre}.pdf`);
   }
 
   function descargarCertificadoRemuneraciones() {
-    descargarPDF(generarCertificadoRemuneracionesServicios({ asistente }), `certificado-remuneraciones-${asistente.nombre}.pdf`);
+    descargarPDF(generarCertificadoRemuneracionesServicios({ asistente, nombreEmpresa: empresa?.nombre ?? '' }), `certificado-remuneraciones-${asistente.nombre}.pdf`);
   }
 
   return (

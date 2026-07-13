@@ -72,7 +72,7 @@ reproponer sin resolver primero el riesgo legal de fondo.
 | PLM Systems | dueña/licenciante del software — usar solo para titularidad/copyright del software, nunca como marca del negocio de cuidado domiciliario |
 | Prestadora | empresa licenciataria del software (prestadora-original es la primera) — en el modelo de datos futuro, "organización"/tenant. No confundir con "Familia" ni con "Asistente" |
 | Admin_prestadora (rol técnico, `usuarios.rol`) | rol de gestión acotado a la propia prestadora, cero visibilidad de otras — es el rol `admin` renombrado en el marco multi-tenant (`docs/PLAN_MULTITENANT_PLM.md` 4.1). Rename de dato + reescritura de las ~28 policies RLS que dependían del valor, ejecutados juntos en el Bloque 2 de `docs/Prompt_Claude_Code_Kickoff_Implementacion.md` (`backend/src/db/schema_multitenant_02.sql`, aplicado 2026-07-09/10) — el valor `admin` ya no existe en el dato ni en el código de autorización, no queda ningún caso de transición pendiente |
-| Desarrollador (en la documentación, para referirse a quien dirige el desarrollo y aprueba las decisiones que Claude Code le eleva) | "Alberto"/"Inversor" como estand-in genérico de esa persona — no es un rol del sistema (ver `Admin`/`Superadmin` en `docs/SECURITY.md`), ni tiene relación con la fila "Inversor" de esta misma tabla (que sí es un hecho societario real, ver `docs/prestadora-original_Fundacional_v3.pdf`) |
+| Desarrollador (en la documentación, para referirse a quien dirige el desarrollo y aprueba las decisiones que Claude Code le eleva) | "Alberto"/"Inversor" como estand-in genérico de esa persona — no es un rol del sistema (ver `Admin`/`Superadmin` en `docs/SECURITY.md`), ni tiene relación con la fila "Inversor" de esta misma tabla (que sí es un hecho societario real, ver `docs/Exclusivo prestadora-original/prestadora-original_Fundacional_v3.pdf`) |
 | Cumplimiento normativo (documental, por prestadora) | compliance — término de negocio nuevo detectado sin aprobación previa en `docs/PLAN_MULTITENANT_PLM.md` (barrido 2026-07-10) y corregido; entidad futura `cumplimiento_normativo_prestadora`, todavía sin implementar en código |
 | Ausente sin relevo previo | cualquier término en inglés o genérico para este caso — un Asistente que no se presenta a una guardia cuando no había ningún Asistente de prestadora-original cubriendo antes que él (ej. primera guardia del día para un Paciente). Distinto de un "ausente" con relevo: acá no hay nadie "saliente" atrapado esperando, el Paciente puede quedar completamente solo — es el escenario de mayor riesgo del protocolo de continuidad de guardia. En el esquema técnico, `incidentes_relevo.guardia_saliente_id` queda `NULL` en este caso (`backend/src/db/schema_modulo6_guardias.sql`) |
 
@@ -177,6 +177,24 @@ azul/verde/naranja/rojo, marco legal argentino específico). No usar su contenid
 Algunos de sus patrones **técnicos** (convenciones de schema, estructura de seguridad,
 taxonomía de eventos) sí se adoptaron donde no entraban en conflicto — están señalados
 explícitamente en `docs/DATA_MODEL.md` y `docs/SECURITY.md` con la nota "(patrón adoptado de Money Suite)".
+
+## Sobre `docs/Exclusivo prestadora-original/` (carpeta agregada 2026-07-13, acceso restringido)
+
+Instrucción explícita del Desarrollador (2026-07-13): todo documento que sea puramente
+particular de prestadora-original — su configuración de negocio específica, identidad de marca,
+investigación de competencia, o cualquier otro contenido exclusivo de esa prestadora sin
+valor de arquitectura/código para el resto del sistema multi-tenant — vive en
+`docs/Exclusivo prestadora-original/`, no en `docs/` a secas. Contenido movido ahí el 2026-07-13:
+`prestadora-original_Fundacional_v3.pdf`, `prestadora-original_Manual_Identidad_v1.html`,
+`prestadora-original_PRD_Reclutamiento_v1.pdf`, `COMPETIDORES_PRESTACIONES.md`,
+`Investigacion_Competencia Marketplace.md`.
+
+**Regla de acceso: no se entra a esa carpeta (no se lee, no se lista, no se referencia su
+contenido) salvo permiso u orden explícita del Desarrollador en la sesión puntual.** No
+alcanza con que la tarea "roce" el tema prestadora-original — el permiso se pide cada vez, no se asume
+de una sesión a la siguiente. El resto de `docs/` (arquitectura, PRDs genéricos, seguridad,
+modelo de datos) sigue sin esta restricción y se lee con normalidad.
+
 ## REGLA 12 — Control estricto (no negociable, agregada 2026-07-10 por exigencia explícita del Desarrollador)
 
 Estas cuatro reglas se aplican siempre, sin excepción, y van antes que cualquier otra

@@ -212,7 +212,7 @@ export function calcularCese({ asistente, fechaCese, causal, escalasLegales }) {
     case 'muerte_del_trabajador':
     case 'muerte_del_empleador': {
       if (causal === 'muerte_del_empleador' && asistente.tipo_vinculo !== 'dependencia') {
-        advertencias.push('Esta causal solo aplica cuando el empleador es la familia directamente (vínculo por dependencia), no a prestadora-original.');
+        advertencias.push('Esta causal solo aplica cuando el empleador es la familia directamente (vínculo por dependencia), no a la prestadora.');
       }
       const base = calcularIndemnizacionAntiguedad(asistente, fechaCese, escalasLegales, advertencias);
       const montoTotal = base.monto !== null ? Number((base.monto / 2).toFixed(2)) : null;

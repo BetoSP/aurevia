@@ -4,7 +4,7 @@ import { notificarCoordinador } from './whatsapp.js';
 // Punto 5 de docs/PRD_06_WhatsApp_IA.md: insistencia al Coordinador según premura, con
 // coordinador de respaldo si no hay reacción, parametrizado por prestadora
 // (configuracion_escalada_coordinador). Corre cada pocos minutos, mismo patrón que
-// ausenciaAutomatica.js — recorre TODAS las prestadoras licenciatarias, no solo prestadora-original.
+// ausenciaAutomatica.js — recorre TODAS las prestadoras licenciatarias por igual.
 //
 // "Premura" = minutos transcurridos desde que se detectó la alerta/incidente. Cada
 // prestadora define sus propios tramos en umbrales_premura (más urgente = intervalo de

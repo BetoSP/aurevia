@@ -33,7 +33,7 @@ números hardcodeados — ver regla 10 de `CLAUDE.md`.
 
 | Término | Definición |
 |---|---|
-| Vínculo | La relación contractual vigente entre prestadora-original/la familia y el Asistente (monotributo o dependencia) |
+| Vínculo | La relación contractual vigente entre la prestadora/la familia y el Asistente (monotributo o dependencia) |
 | Cese | Fin del vínculo, con una causal específica y (cuando aplica) un cálculo de liquidación |
 | Causal de cese | Una de las 13 razones tipificadas de fin de vínculo — ver enum `causal_cese` en `DATA_MODEL.md` |
 | Escala legal | Un valor normativo versionado (tope indemnizatorio, valor hora CCT, etc.), nunca hardcodeado |
@@ -86,13 +86,13 @@ y el Simulador de Vínculo (sección siguiente) — **no reimplementar la lógic
 | `despido_sin_causa` | Indemnización completa: antigüedad + preaviso + integración mes despido, con tope art. 245 vía `escalas_legales` |
 | `abandono_de_trabajo` | Similar a justa causa — requiere revisión de abogado |
 | `muerte_del_trabajador` | Indemnización reducida a favor de derechohabientes — cálculo especial, marcar `requiereRevisionAbogado: true` |
-| `muerte_del_empleador` | Indemnización reducida — solo aplica si el empleador es la familia directamente (dependencia), no si es prestadora-original |
+| `muerte_del_empleador` | Indemnización reducida — solo aplica si el empleador es la familia directamente (dependencia), no si es la prestadora |
 | `muerte_persona_cuidada` | Causal específica del sector — tratamiento similar a fuerza mayor, **no calcula automático**, deriva a abogado |
 | `periodo_de_prueba` | Sin indemnización si está dentro del período de prueba vigente (`escalas_legales` define la duración) |
 | `incapacidad_absoluta` | **No calcula automático** — fuera de alcance (ver sección "Fuera de alcance"), `montoTotal: null` |
 | `jubilacion` | **No calcula automático** — fuera de alcance, `montoTotal: null` |
 | `despido_por_embarazo_o_matrimonio` | Indemnización agravada — multiplicador sobre la base de `despido_sin_causa`, definido en `escalas_legales` |
-| `fin_contrato_comercial` | Solo aplica a monotributistas cuyo vínculo es comercial, no laboral — **no calcula automático**, `montoTotal: null`, es el caso donde prestadora-original corta relación comercial con un prestador autónomo |
+| `fin_contrato_comercial` | Solo aplica a monotributistas cuyo vínculo es comercial, no laboral — **no calcula automático**, `montoTotal: null`, es el caso donde la prestadora corta relación comercial con un prestador autónomo |
 
 Para `incapacidad_absoluta`, `jubilacion` y `fin_contrato_comercial`: el sistema registra el
 cese y guarda toda la info de contexto, pero deja `monto_total = NULL` y
@@ -114,8 +114,8 @@ Indicador 0-100 por Asistente monotributista, recalculado cuando cambian sus dat
 periódicamente (job). Basado en 7 indicadores ponderados, cada uno con su peso almacenado en
 `escalas_legales` (`tipo = 'indicador_riesgo_dependencia'`, `categoria` = nombre del
 indicador) — **no hardcodear los pesos en el código**, así se pueden ajustar sin deploy.
-Indicadores típicos: exclusividad de facturación a prestadora-original, antigüedad del vínculo, horas
-semanales promedio, uso de herramientas/uniforme provisto por prestadora-original, existencia de horario
+Indicadores típicos: exclusividad de facturación a la prestadora, antigüedad del vínculo, horas
+semanales promedio, uso de herramientas/uniforme provisto por la prestadora, existencia de horario
 fijo impuesto, exclusividad de zona asignada, nivel de supervisión directa. El score se
 guarda en `asistentes.score_riesgo_reclasificacion` y se recalcula, no se acumula histórico
 en esta tabla (si se necesita histórico, agregar tabla aparte cuando haya ese requerimiento).

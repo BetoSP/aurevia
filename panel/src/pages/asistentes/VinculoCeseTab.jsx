@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresa } from '../../context/EmpresaContext';
 import { useEscalasLegales } from '../../hooks/useEscalasLegales';
 import { resolverEscalasVigentes } from '../../lib/escalasLegales';
 import { calcularCese } from '../../lib/calcularCese';
@@ -25,6 +26,7 @@ const CAUSALES = [
 export function VinculoCeseTab({ asistente, onActualizado }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
+  const { empresa } = useEmpresa();
   const { filas: escalasCrudas, estado: estadoEscalas } = useEscalasLegales();
   const [ceses, setCeses] = useState([]);
   const [estadoCeses, setEstadoCeses] = useState('cargando');
@@ -97,17 +99,17 @@ export function VinculoCeseTab({ asistente, onActualizado }) {
   }
 
   function descargarLiquidacion(cese) {
-    const doc = generarLiquidacionFinal({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal] });
+    const doc = generarLiquidacionFinal({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal], nombreEmpresa: empresa?.nombre ?? '' });
     descargarPDF(doc, `liquidacion-${asistente.nombre}-${cese.fecha_cese}.pdf`);
   }
 
   function descargarTelegramaONotificacion(cese) {
     if (cese.causal === 'periodo_de_prueba') {
-      const doc = generarNotificacionFinPeriodoPrueba({ asistente, cese });
+      const doc = generarNotificacionFinPeriodoPrueba({ asistente, cese, nombreEmpresa: empresa?.nombre ?? '' });
       descargarPDF(doc, `notificacion-fin-periodo-prueba-${asistente.nombre}-${cese.fecha_cese}.pdf`);
       return;
     }
-    const doc = generarTelegramaCese({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal] });
+    const doc = generarTelegramaCese({ asistente, cese, causalLabel: t.asistentes.causales[cese.causal], nombreEmpresa: empresa?.nombre ?? '' });
     descargarPDF(doc, `telegrama-cese-${asistente.nombre}-${cese.fecha_cese}.pdf`);
   }
 

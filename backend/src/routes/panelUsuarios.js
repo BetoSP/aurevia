@@ -43,7 +43,7 @@ panelUsuariosRouter.get('/', requiereRolPanel, requiereAdminOSuperior, async (re
 });
 
 panelUsuariosRouter.post('/', requiereRolPanel, requiereAdminOSuperior, async (req, res) => {
-  const { email, nombre, telefono, zonas, rol } = req.body;
+  const { email, nombre, telefono, zonas, rol, prestadora_id } = req.body;
   if (!email || !nombre) {
     return res.status(400).json({ error: 'Faltan email o nombre' });
   }
@@ -54,15 +54,18 @@ panelUsuariosRouter.post('/', requiereRolPanel, requiereAdminOSuperior, async (r
     return res.status(403).json({ error: 'No tenés permiso para crear cuentas con ese rol' });
   }
 
+  // Superadmin no "pertenece" a una prestadora (su columna prestadora_id solo está
+  // backfillada por consistencia de esquema) — puede dar de alta el primer usuario de
+  // cualquier licenciataria, eligiendo el destino explícitamente. Admin_prestadora nunca
+  // puede elegir: sus cuentas nuevas siempre nacen en su propia prestadora.
+  const prestadoraDestino = req.usuarioPanel.rol === 'superadmin' && prestadora_id
+    ? prestadora_id
+    : req.usuarioPanel.prestadoraId;
+
   try {
     const { userId, passwordTemporal } = await crearCuentaConPerfil({
       email, nombre, telefono, rol: rolNuevo, zonas,
-      // Hoy toda cuenta nueva se crea en la misma prestadora de quien la crea — incluso
-      // cuando quien crea es superadmin, porque solo existe una prestadora todavía. Cuando
-      // exista una segunda, superadmin necesita elegir explícitamente el tenant destino en
-      // vez de heredar el suyo (no es su caso de uso real: superadmin no "pertenece" a una
-      // prestadora, solo tiene esa columna backfillada).
-      prestadoraId: req.usuarioPanel.prestadoraId,
+      prestadoraId: prestadoraDestino,
     });
     res.json({ ok: true, id: userId, passwordTemporal });
   } catch (error) {

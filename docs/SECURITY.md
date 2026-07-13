@@ -3,9 +3,9 @@
 > Fuente principal: `prestadora-original_DOCUMENTO_UNICO_v1.md` Parte L (Arquitectura Web) y Parte O
 > (RLS policies). Donde se indica, se adoptan patrones de `Prompt de Money Suite.md`
 > (no vinculante) porque son buenas prácticas concretas que no contradicen ninguna
-> decisión de negocio ya tomada — prestadora-original usa Supabase Auth, no un esquema JWT propio, así
-> que solo se toman las partes de Money Suite que son configuración de Supabase o política
-> independiente del proveedor.
+> decisión de negocio ya tomada — la plataforma usa Supabase Auth, no un esquema JWT propio,
+> así que solo se toman las partes de Money Suite que son configuración de Supabase o
+> política independiente del proveedor.
 
 ## Autenticación por etapa
 

@@ -8,10 +8,13 @@ import { jsPDF } from 'jspdf';
 const MARGEN = 20;
 const ANCHO_UTIL = 170;
 
-const DISCLAIMER_LEGAL =
-  'Documento generado automáticamente por el sistema prestadora-original a partir de los datos cargados. ' +
-  'Debe ser revisado por un abogado laboralista antes de su entrega o uso formal — no reemplaza ' +
-  'el asesoramiento legal profesional.';
+function textoDisclaimerLegal(nombreEmpresa) {
+  return (
+    `Documento generado automáticamente por el sistema de ${nombreEmpresa} a partir de los datos cargados. ` +
+    'Debe ser revisado por un abogado laboralista antes de su entrega o uso formal — no reemplaza ' +
+    'el asesoramiento legal profesional.'
+  );
+}
 
 function nuevoDocumento() {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -19,10 +22,10 @@ function nuevoDocumento() {
   return doc;
 }
 
-function encabezado(doc, titulo) {
+function encabezado(doc, titulo, nombreEmpresa) {
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('prestadora-original SALUD', MARGEN, 20);
+  doc.text(nombreEmpresa.toUpperCase(), MARGEN, 20);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.text(titulo, MARGEN, 28);
@@ -39,12 +42,12 @@ function parrafo(doc, texto, y, opciones = {}) {
   return y + lineas.length * 5 + (opciones.espacioExtra ?? 4);
 }
 
-function piePagina(doc) {
+function piePagina(doc, nombreEmpresa) {
   const alturaPagina = doc.internal.pageSize.getHeight();
   doc.setFontSize(7.5);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(120);
-  const lineas = doc.splitTextToSize(DISCLAIMER_LEGAL, ANCHO_UTIL);
+  const lineas = doc.splitTextToSize(textoDisclaimerLegal(nombreEmpresa), ANCHO_UTIL);
   doc.text(lineas, MARGEN, alturaPagina - 20);
   doc.setTextColor(0);
 }
@@ -69,9 +72,9 @@ function formatoMonto(monto) {
 
 // --- Liquidación final -------------------------------------------------------
 
-export function generarLiquidacionFinal({ asistente, cese, causalLabel }) {
+export function generarLiquidacionFinal({ asistente, cese, causalLabel, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Liquidación final');
+  let y = encabezado(doc, 'Liquidación final', nombreEmpresa);
 
   y = parrafo(doc, `Asistente: ${asistente.nombre}`, y, { negrita: true });
   y = parrafo(doc, `DNI: ${asistente.dni ?? '—'}`, y);
@@ -96,15 +99,15 @@ export function generarLiquidacionFinal({ asistente, cese, causalLabel }) {
     doc.setTextColor(0);
   }
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 
 // --- Telegrama de notificación de cese ---------------------------------------
 
-export function generarTelegramaCese({ asistente, cese, causalLabel }) {
+export function generarTelegramaCese({ asistente, cese, causalLabel, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Telegrama de notificación de cese');
+  let y = encabezado(doc, 'Telegrama de notificación de cese', nombreEmpresa);
 
   y = parrafo(doc, `Fecha: ${formatoFecha(new Date())}`, y);
   y = parrafo(doc, `Destinatario: ${asistente.nombre} (DNI ${asistente.dni ?? '—'})`, y, { espacioExtra: 8 });
@@ -115,15 +118,15 @@ export function generarTelegramaCese({ asistente, cese, causalLabel }) {
     `abogado laboralista — este documento es un borrador estructurado, no un texto legal final.]`;
   y = parrafo(doc, texto, y, { espacioExtra: 10 });
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 
 // --- Notificación de fin de período de prueba ---------------------------------
 
-export function generarNotificacionFinPeriodoPrueba({ asistente, cese }) {
+export function generarNotificacionFinPeriodoPrueba({ asistente, cese, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Notificación de fin de período de prueba');
+  let y = encabezado(doc, 'Notificación de fin de período de prueba', nombreEmpresa);
 
   y = parrafo(doc, `Asistente: ${asistente.nombre} (DNI ${asistente.dni ?? '—'})`, y);
   y = parrafo(doc, `Fecha de alta: ${formatoFecha(asistente.fecha_alta)}`, y);
@@ -133,31 +136,31 @@ export function generarNotificacionFinPeriodoPrueba({ asistente, cese }) {
     'sin generar derecho a indemnización, conforme a la normativa aplicable.';
   y = parrafo(doc, texto, y, { espacioExtra: 10 });
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 
 // --- Certificado de trabajo (general, no ligado a un cese) -------------------
 
-export function generarCertificadoTrabajo({ asistente }) {
+export function generarCertificadoTrabajo({ asistente, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Certificado de trabajo');
+  let y = encabezado(doc, 'Certificado de trabajo', nombreEmpresa);
 
   y = parrafo(doc, `Se certifica que ${asistente.nombre} (DNI ${asistente.dni ?? '—'}) ` +
-    `se encuentra/estuvo vinculado/a con prestadora-original Salud como Asistente Integral, ` +
+    `se encuentra/estuvo vinculado/a con ${nombreEmpresa} como Asistente Integral, ` +
     `bajo la modalidad de ${asistente.tipo_vinculo === 'dependencia' ? 'relación de dependencia' : 'monotributo'}, ` +
     `desde el ${formatoFecha(asistente.fecha_alta)}` +
     `${asistente.fecha_baja ? ` hasta el ${formatoFecha(asistente.fecha_baja)}` : ''}.`, y, { espacioExtra: 10 });
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 
 // --- Certificado de remuneraciones y servicios --------------------------------
 
-export function generarCertificadoRemuneracionesServicios({ asistente }) {
+export function generarCertificadoRemuneracionesServicios({ asistente, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Certificado de remuneraciones y servicios');
+  let y = encabezado(doc, 'Certificado de remuneraciones y servicios', nombreEmpresa);
 
   y = parrafo(doc, `Asistente: ${asistente.nombre} (DNI ${asistente.dni ?? '—'})`, y);
   y = parrafo(doc, `Modalidad de vínculo: ${asistente.tipo_vinculo === 'dependencia' ? 'Relación de dependencia' : 'Monotributo'}`, y);
@@ -170,15 +173,15 @@ export function generarCertificadoRemuneracionesServicios({ asistente }) {
   }
   y = parrafo(doc, `Período: ${formatoFecha(asistente.fecha_alta)} — ${asistente.fecha_baja ? formatoFecha(asistente.fecha_baja) : 'actualidad'}`, y, { espacioExtra: 10 });
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 
 // --- Constancia de ausencia justificada ---------------------------------------
 
-export function generarConstanciaAusencia({ asistente, ausencia, tipoLabel }) {
+export function generarConstanciaAusencia({ asistente, ausencia, tipoLabel, nombreEmpresa }) {
   const doc = nuevoDocumento();
-  let y = encabezado(doc, 'Constancia de ausencia justificada');
+  let y = encabezado(doc, 'Constancia de ausencia justificada', nombreEmpresa);
 
   y = parrafo(doc, `Asistente: ${asistente.nombre} (DNI ${asistente.dni ?? '—'})`, y);
   y = parrafo(doc, `Tipo de ausencia: ${tipoLabel}`, y);
@@ -191,7 +194,7 @@ export function generarConstanciaAusencia({ asistente, ausencia, tipoLabel }) {
     y = parrafo(doc, `Observaciones: ${ausencia.observaciones}`, y, { espacioExtra: 8 });
   }
 
-  piePagina(doc);
+  piePagina(doc, nombreEmpresa);
   return doc;
 }
 

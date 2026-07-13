@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresa } from '../../context/EmpresaContext';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
@@ -28,6 +29,7 @@ async function llamarApiAusencias(path, opciones = {}) {
 export function AusenciasCoberturaTab({ asistente }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
+  const { empresa } = useEmpresa();
   const [ausencias, setAusencias] = useState([]);
   const [otrosAsistentes, setOtrosAsistentes] = useState([]);
   const [estado, setEstado] = useState('cargando');
@@ -79,7 +81,7 @@ export function AusenciasCoberturaTab({ asistente }) {
 
   function descargarConstancia(ausencia) {
     const doc = generarConstanciaAusencia({
-      asistente, ausencia, tipoLabel: t.asistentes.ausencias[`tipo_${ausencia.tipo}`],
+      asistente, ausencia, tipoLabel: t.asistentes.ausencias[`tipo_${ausencia.tipo}`], nombreEmpresa: empresa?.nombre ?? '',
     });
     descargarPDF(doc, `constancia-ausencia-${asistente.nombre}-${ausencia.fecha_inicio}.pdf`);
   }

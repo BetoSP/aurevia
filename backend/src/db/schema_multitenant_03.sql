@@ -11,7 +11,7 @@
 -- ListaPrecioDetalle, PrestacionesPaciente, CertificadoTab, NuevaGuardiaModal)
 -- seteándolo explícitamente, el DEFAULT ya no hace falta y pasa a ser un
 -- riesgo: enmascararía en silencio un insert que se olvide de setearlo,
--- insertando en el tenant de prestadora-original sin que nadie lo note.
+-- insertando en el tenant equivocado (el de la fila DEFAULT) sin que nadie lo note.
 --
 -- Nota: schema_modulo6_guardias.sql define `guardias`/`series_guardias` con
 -- prestadora_id NOT NULL sin DEFAULT desde su creación — esas dos tablas no
