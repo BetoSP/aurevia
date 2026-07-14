@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useEmpresa } from '../../context/EmpresaContext';
@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { FormField } from '../../components/ui/FormField';
 import { Alert } from '../../components/ui/Alert';
+import { EstadoLista } from '../../components/layout/EstadoLista';
 import { generarCertificadoTrabajo, generarCertificadoRemuneracionesServicios, descargarPDF } from '../../lib/generarDocumentoCese';
 
 export function PerfilTab({ asistente, onActualizado }) {
@@ -23,9 +24,6 @@ export function PerfilTab({ asistente, onActualizado }) {
     valor_hora: asistente.valor_hora || '',
     sueldo_basico: asistente.sueldo_basico || '',
     horas_semanales: asistente.horas_semanales || '',
-    vencimiento_monotributo: asistente.vencimiento_monotributo || '',
-    vencimiento_art: asistente.vencimiento_art || '',
-    vencimiento_seguro: asistente.vencimiento_seguro || '',
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
@@ -49,9 +47,6 @@ export function PerfilTab({ asistente, onActualizado }) {
         valor_hora: form.valor_hora || null,
         sueldo_basico: form.sueldo_basico || null,
         horas_semanales: form.horas_semanales || null,
-        vencimiento_monotributo: form.vencimiento_monotributo || null,
-        vencimiento_art: form.vencimiento_art || null,
-        vencimiento_seguro: form.vencimiento_seguro || null,
       }),
     };
     const { error: errorUpdate } = await supabase.from('asistentes').update(payload).eq('id', asistente.id);
@@ -122,10 +117,6 @@ export function PerfilTab({ asistente, onActualizado }) {
             <FormField label={t.asistentes.valor_hora} name="valor_hora" type="number" value={form.valor_hora} onChange={(e) => set('valor_hora', e.target.value)} />
           )}
           <FormField label={t.asistentes.horas_semanales} name="horas_semanales" type="number" value={form.horas_semanales} onChange={(e) => set('horas_semanales', e.target.value)} />
-
-          <FormField label={t.asistentes.vencimiento_monotributo} name="vencimiento_monotributo" type="date" value={form.vencimiento_monotributo} onChange={(e) => set('vencimiento_monotributo', e.target.value)} />
-          <FormField label={t.asistentes.vencimiento_art} name="vencimiento_art" type="date" value={form.vencimiento_art} onChange={(e) => set('vencimiento_art', e.target.value)} />
-          <FormField label={t.asistentes.vencimiento_seguro} name="vencimiento_seguro" type="date" value={form.vencimiento_seguro} onChange={(e) => set('vencimiento_seguro', e.target.value)} />
         </>
       )}
 
@@ -140,8 +131,110 @@ export function PerfilTab({ asistente, onActualizado }) {
           <Button variant="secondary" onClick={descargarCertificadoRemuneraciones}>
             {t.asistentes.documentos.certificado_remuneraciones}
           </Button>
+
+          <DocumentosVencimiento asistenteId={asistente.id} />
         </>
       )}
     </div>
+  );
+}
+
+// Catálogo configurable por prestadora (Configuración > Documentos de Asistentes) — reemplaza
+// las 3 columnas fijas vencimiento_monotributo/art/seguro (ver docs/PENDIENTES.md #18 punto 1,
+// backend/src/db/schema_documentos_asistente.sql).
+function DocumentosVencimiento({ asistenteId }) {
+  const { t } = useLocale();
+  const [tipos, setTipos] = useState([]);
+  const [valores, setValores] = useState({});
+  const [documentoIds, setDocumentoIds] = useState({});
+  const [estado, setEstado] = useState('cargando');
+  const [error, setError] = useState(null);
+  const [guardandoTipoId, setGuardandoTipoId] = useState(null);
+
+  const recargar = useCallback(async () => {
+    setEstado('cargando');
+    setError(null);
+    const [{ data: tiposData, error: errorTipos }, { data: documentosData, error: errorDocumentos }] = await Promise.all([
+      supabase.from('tipos_documento_asistente').select('id, nombre, requiere_vencimiento').eq('activo', true).order('nombre'),
+      supabase.from('documentos_asistente').select('id, tipo_documento_id, fecha_vencimiento').eq('asistente_id', asistenteId),
+    ]);
+    if (errorTipos || errorDocumentos) {
+      setError(t.comun.error_generico);
+      setEstado('error');
+      return;
+    }
+    setTipos(tiposData ?? []);
+    const nuevosValores = {};
+    const nuevosIds = {};
+    for (const doc of documentosData ?? []) {
+      nuevosValores[doc.tipo_documento_id] = doc.fecha_vencimiento || '';
+      nuevosIds[doc.tipo_documento_id] = doc.id;
+    }
+    setValores(nuevosValores);
+    setDocumentoIds(nuevosIds);
+    setEstado('listo');
+  }, [asistenteId, t]);
+
+  useEffect(() => {
+    recargar();
+  }, [recargar]);
+
+  async function guardarDocumento(tipoId) {
+    setGuardandoTipoId(tipoId);
+    setError(null);
+    const fecha = valores[tipoId] || null;
+    const { error: errorGuardar } = await supabase
+      .from('documentos_asistente')
+      .upsert(
+        { id: documentoIds[tipoId], asistente_id: asistenteId, tipo_documento_id: tipoId, fecha_vencimiento: fecha },
+        { onConflict: 'asistente_id,tipo_documento_id' },
+      );
+    setGuardandoTipoId(null);
+    if (errorGuardar) {
+      setError(t.comun.error_generico);
+      return;
+    }
+    recargar();
+  }
+
+  return (
+    <>
+      <h2>{t.asistentes.documentos.vencimientos_titulo}</h2>
+      {error && <Alert variant="error">{error}</Alert>}
+      <EstadoLista estado={estado} error={error} vacio={estado === 'listo' && tipos.length === 0} recargar={recargar} mensajeVacio={t.asistentes.documentos.vencimientos_sin_tipos}>
+        <table className="panel-tabla">
+          <thead>
+            <tr>
+              <th>{t.asistentes.documentos.vencimientos_col_tipo}</th>
+              <th>{t.asistentes.documentos.vencimientos_col_vencimiento}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {tipos.map((tipo) => (
+              <tr key={tipo.id}>
+                <td>{tipo.nombre}</td>
+                <td>
+                  {tipo.requiere_vencimiento ? (
+                    <input
+                      type="date"
+                      value={valores[tipo.id] || ''}
+                      onChange={(e) => setValores((v) => ({ ...v, [tipo.id]: e.target.value }))}
+                    />
+                  ) : '—'}
+                </td>
+                <td>
+                  {tipo.requiere_vencimiento && (
+                    <button onClick={() => guardarDocumento(tipo.id)} disabled={guardandoTipoId === tipo.id}>
+                      {guardandoTipoId === tipo.id ? t.comun.guardando : t.comun.guardar}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </EstadoLista>
+    </>
   );
 }

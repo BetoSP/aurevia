@@ -127,11 +127,67 @@ ALTER TABLE asistentes ADD COLUMN causal_baja TEXT;        -- ver enum causal_ce
 ALTER TABLE asistentes ADD COLUMN valor_hora NUMERIC(12,2);      -- si monotributo
 ALTER TABLE asistentes ADD COLUMN sueldo_basico NUMERIC(12,2);   -- si dependencia
 ALTER TABLE asistentes ADD COLUMN horas_semanales NUMERIC(5,2);
-ALTER TABLE asistentes ADD COLUMN vencimiento_monotributo DATE;
-ALTER TABLE asistentes ADD COLUMN vencimiento_art DATE;
-ALTER TABLE asistentes ADD COLUMN vencimiento_seguro DATE;
 ALTER TABLE asistentes ADD COLUMN score_riesgo_reclasificacion INTEGER DEFAULT 0; -- 0-100
 ```
+
+## Tablas: tipos_documento_asistente / documentos_asistente (pendiente #18 punto 1, aplicado
+## y verificado contra Supabase real 2026-07-14)
+
+Reemplazan las 3 columnas fijas `vencimiento_monotributo`/`vencimiento_art`/`vencimiento_seguro`
+que tenía `asistentes` (ver arriba, ya quitadas de este documento) — el catálogo de qué
+documentos con vencimiento se le siguen a un Asistente pasa a ser configurable por cada
+prestadora, sin límite de cantidad, en vez de un arreglo fijo escrito en el código (Regla 1 de
+`CLAUDE.md`).
+
+```sql
+CREATE TABLE tipos_documento_asistente (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prestadora_id UUID NOT NULL REFERENCES prestadoras(id),
+  nombre TEXT NOT NULL,
+  requiere_vencimiento BOOLEAN NOT NULL DEFAULT true,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (id, prestadora_id),
+  UNIQUE (prestadora_id, nombre)
+);
+
+CREATE TABLE documentos_asistente (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prestadora_id UUID NOT NULL REFERENCES prestadoras(id),
+  asistente_id UUID NOT NULL REFERENCES asistentes(id) ON DELETE CASCADE,
+  tipo_documento_id UUID NOT NULL,
+  fecha_vencimiento DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (tipo_documento_id, prestadora_id) REFERENCES tipos_documento_asistente (id, prestadora_id),
+  UNIQUE (asistente_id, tipo_documento_id)
+);
+
+-- prestadoras: plazo de aviso configurable, reemplaza el fijo de 30 días que tenía
+-- backend/src/utils/vencimientos.js
+ALTER TABLE prestadoras ADD COLUMN dias_aviso_vencimiento_documentos SMALLINT NOT NULL DEFAULT 30;
+```
+
+`tipos_documento_asistente` es el catálogo por prestadora (nombre + si tiene vencimiento o es
+meramente informativo). `documentos_asistente` es una fila por cada documento cargado de cada
+Asistente. La migración incluida en `backend/src/db/schema_documentos_asistente.sql` siembra
+por cada prestadora existente 4 tipos sugeridos (Monotributo, ART, Seguro, Certificado de
+Antecedentes Penales) y traslada los valores que hubiera en las 3 columnas viejas a filas de
+`documentos_asistente`, antes de borrarlas.
+
+RLS: `admin_prestadora` gestiona (`FOR ALL`) ambas tablas dentro de su `prestadora_id`;
+`coordinador` solo lee (`tipos_documento_asistente` completo, `documentos_asistente` filtrado
+por su zona vía join con `asistentes.zonas`) — mismo patrón que `verificaciones_asistente`/
+`certificados` (Regla 8 de `CLAUDE.md`, dato laboral interno, nunca visible para
+Asistente/Familia).
+
+**Estado 2026-07-14:** `backend/src/db/schema_documentos_asistente.sql` aplicado contra
+Supabase real y verificado (catálogo de 4 tipos sembrado por prestadora, columnas viejas
+eliminadas de `asistentes`, `configuracion_notificaciones` migrado al evento genérico
+`vencimiento_documento_asistente`, `dias_aviso_vencimiento_documentos` con default 30 — ver
+`docs/PENDIENTES.md` #18). Código de Panel/backend (`backend/src/routes/panelConfiguracion.js`,
+`panel/src/pages/Configuracion.jsx`, `panel/src/pages/asistentes/PerfilTab.jsx`,
+`backend/src/utils/vencimientos.js`) también entregado en el mismo cierre.
 
 Nota: `etapas_verificacion` como columna JSONB **no se usa** en este schema — se reemplaza
 por la tabla normalizada `verificaciones_asistente` de abajo, que permite filtrar y auditar

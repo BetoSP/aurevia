@@ -27,7 +27,7 @@ números hardcodeados — ver regla 10 de `CLAUDE.md`.
 | 6 | Guardias de cobertura (reemplazo temporal por ausencia) |
 | 7 | Generador de documentación (liquidaciones, telegramas, certificados) |
 | 8 | Tabla versionada de valores legales (`escalas_legales`) |
-| 9 | Notificaciones de vencimientos (monotributo, ART, seguro) |
+| 9 | Notificaciones de vencimientos de documentación (catálogo configurable por prestadora — ver `docs/PENDIENTES.md` #18 punto 1) |
 
 ## Glosario nuevo (sumar al de `CLAUDE.md`)
 
@@ -44,10 +44,15 @@ números hardcodeados — ver regla 10 de `CLAUDE.md`.
 
 Ver `DATA_MODEL.md` sección "Gestión de Personal" — tablas `asistentes` (columnas
 extendidas: `tipo_vinculo`, `categoria_cct`, `fecha_alta`, `fecha_baja`, `causal_baja`,
-`valor_hora`, `sueldo_basico`, `horas_semanales`, `vencimiento_monotributo`,
-`vencimiento_art`, `vencimiento_seguro`, `score_riesgo_reclasificacion`),
+`valor_hora`, `sueldo_basico`, `horas_semanales`, `score_riesgo_reclasificacion`),
 `escalas_legales`, `ausencias`, `guardias_cobertura`, `ceses`. Esas tablas ya están escritas
 ahí con el SQL exacto — no reproducir aquí para evitar que las dos fuentes diverjan.
+
+Los vencimientos de documentación del Asistente (Monotributo, ART, Seguro, Certificado de
+Antecedentes Penales u otros que agregue cada prestadora) ya no viven como columnas de
+`asistentes` — pasaron a las tablas `tipos_documento_asistente`/`documentos_asistente` (ver
+`DATA_MODEL.md`, pendiente #18 punto 1 de `docs/PENDIENTES.md`), configurables por prestadora
+sin límite de cantidad.
 
 Regla que más se rompe (repetida a propósito): toda lectura de `escalas_legales` filtra por
 `vigencia_desde <= fecha_del_hecho AND (vigencia_hasta IS NULL OR vigencia_hasta >=

@@ -1,26 +1,19 @@
 import { supabase } from '../db/connection.js';
 import { enviarEmailCoordinador } from './email.js';
 
-const DIAS_ANTICIPACION = 30;
+const EVENTO_VENCIMIENTO_DOCUMENTO = 'vencimiento_documento_asistente';
+const DIAS_ANTICIPACION_DEFAULT = 30;
 
-const CAMPOS_VENCIMIENTO = [
-  { columna: 'vencimiento_monotributo', evento: 'vencimiento_monotributo', etiqueta: 'Monotributo' },
-  { columna: 'vencimiento_art', evento: 'vencimiento_art', etiqueta: 'ART' },
-  { columna: 'vencimiento_seguro', evento: 'vencimiento_seguro', etiqueta: 'Seguro' },
-];
-
-// Revisa vencimientos de Asistentes activos dentro de los próximos 30 días (o ya vencidos) y
-// avisa por email según docs/PRD_02B_Gestion_Personal.md función 9. Se ejecuta una vez por
-// día (ver server.js) — no hay deduplicación de avisos ya enviados: mientras el vencimiento
-// siga dentro de la ventana, se vuelve a avisar en cada corrida, a propósito, para no
-// depender de una tabla de "ya avisado" que el PRD no pide.
+// Revisa vencimientos de los documentos que cada prestadora eligió trackear (catálogo en
+// tipos_documento_asistente, configurable por prestadora — ver docs/PENDIENTES.md #18 punto 1,
+// backend/src/db/schema_documentos_asistente.sql) y avisa por email al Coordinador según
+// docs/PRD_02B_Gestion_Personal.md función 9. Se ejecuta una vez por día (ver server.js).
 // Recorre TODAS las prestadoras licenciatarias, no una fija (mismo patrón que
-// revisarAusenciasAutomaticas/revisarNotificacionesCoordinador) — antes de
-// schema_multitenant_05.sql este cron solo revisaba un tenant fijo.
+// revisarAusenciasAutomaticas/revisarNotificacionesCoordinador).
 export async function revisarVencimientos() {
   const { data: prestadoras, error: errorPrestadoras } = await supabase
     .from('prestadoras')
-    .select('id')
+    .select('id, dias_aviso_vencimiento_documentos')
     .eq('estado', 'certificada');
 
   if (errorPrestadoras) {
@@ -28,39 +21,54 @@ export async function revisarVencimientos() {
     return;
   }
 
-  const limite = new Date();
-  limite.setDate(limite.getDate() + DIAS_ANTICIPACION);
-  const limiteISO = limite.toISOString().slice(0, 10);
+  for (const { id: prestadoraId, dias_aviso_vencimiento_documentos: diasAviso } of prestadoras ?? []) {
+    const anticipacion = diasAviso ?? DIAS_ANTICIPACION_DEFAULT;
+    const limite = new Date();
+    limite.setDate(limite.getDate() + anticipacion);
+    const limiteISO = limite.toISOString().slice(0, 10);
 
-  for (const { id: prestadoraId } of prestadoras ?? []) {
-    for (const { columna, evento, etiqueta } of CAMPOS_VENCIMIENTO) {
-      const { data: asistentes, error } = await supabase
-        .from('asistentes')
-        .select(`nombre, ${columna}`)
-        .eq('estado', 'activo')
+    const { data: tipos, error: errorTipos } = await supabase
+      .from('tipos_documento_asistente')
+      .select('id, nombre')
+      .eq('prestadora_id', prestadoraId)
+      .eq('requiere_vencimiento', true)
+      .eq('activo', true);
+
+    if (errorTipos) {
+      console.error(`Error consultando catálogo de documentos de ${prestadoraId}:`, errorTipos.message);
+      continue;
+    }
+
+    for (const { id: tipoDocumentoId, nombre: etiqueta } of tipos ?? []) {
+      const { data: documentos, error } = await supabase
+        .from('documentos_asistente')
+        .select('fecha_vencimiento, asistentes(nombre, estado)')
         .eq('prestadora_id', prestadoraId)
-        .not(columna, 'is', null)
-        .lte(columna, limiteISO);
+        .eq('tipo_documento_id', tipoDocumentoId)
+        .not('fecha_vencimiento', 'is', null)
+        .lte('fecha_vencimiento', limiteISO);
 
       if (error) {
-        console.error(`Error consultando vencimientos (${columna}) de ${prestadoraId}:`, error.message);
+        console.error(`Error consultando vencimientos (${etiqueta}) de ${prestadoraId}:`, error.message);
         continue;
       }
-      if (!asistentes?.length) continue;
 
-      const lista = asistentes
-        .map((a) => `${a.nombre}: vence ${a[columna]}`)
+      const activos = (documentos ?? []).filter((d) => d.asistentes?.estado === 'activo');
+      if (!activos.length) continue;
+
+      const lista = activos
+        .map((d) => `${d.asistentes.nombre}: vence ${d.fecha_vencimiento}`)
         .join('\n');
 
       try {
         await enviarEmailCoordinador({
-          evento,
+          evento: EVENTO_VENCIMIENTO_DOCUMENTO,
           prestadoraId,
-          asunto: `Vencimientos próximos de ${etiqueta} — ${asistentes.length} Asistente(s)`,
-          texto: `Los siguientes Asistentes tienen ${etiqueta} vencido o por vencer dentro de ${DIAS_ANTICIPACION} días:\n\n${lista}`,
+          asunto: `Vencimientos próximos de ${etiqueta} — ${activos.length} Asistente(s)`,
+          texto: `Los siguientes Asistentes tienen ${etiqueta} vencido o por vencer dentro de ${anticipacion} días:\n\n${lista}`,
         });
       } catch (err) {
-        console.error(`Error enviando email de vencimiento (${columna}) de ${prestadoraId}:`, err.message);
+        console.error(`Error enviando email de vencimiento (${etiqueta}) de ${prestadoraId}:`, err.message);
       }
     }
   }

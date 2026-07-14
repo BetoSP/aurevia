@@ -306,6 +306,63 @@ panelConfiguracionRouter.delete('/whatsapp/plantillas/:id', async (req, res) => 
   res.json({ ok: true });
 });
 
+// --- Catálogo de tipos de documento de Asistente (vencimientos a trackear) + plazo de aviso
+//     configurable por prestadora (pendiente #18 punto 1, docs/PENDIENTES.md — ver
+//     backend/src/db/schema_documentos_asistente.sql). El plazo vive en la tabla "prestadoras",
+//     de gestión exclusiva de superadmin por RLS (schema_multitenant_01.sql) — se expone acá
+//     porque el backend usa la service role key y aplica el mismo scoping por prestadora que
+//     el resto de este archivo. ---
+panelConfiguracionRouter.get('/documentos-tipo', async (req, res) => {
+  const prestadoraId = req.usuarioPanel.rol === 'superadmin' && req.query.prestadora_id
+    ? req.query.prestadora_id
+    : req.usuarioPanel.prestadoraId;
+
+  const [{ data: tipos, error: errorTipos }, { data: prestadora, error: errorPrestadora }] = await Promise.all([
+    supabase.from('tipos_documento_asistente').select('*').eq('prestadora_id', prestadoraId).order('nombre'),
+    supabase.from('prestadoras').select('dias_aviso_vencimiento_documentos').eq('id', prestadoraId).single(),
+  ]);
+  if (errorTipos) return res.status(500).json({ error: errorTipos.message });
+  if (errorPrestadora) return res.status(500).json({ error: errorPrestadora.message });
+  res.json({ tipos, dias_aviso_vencimiento_documentos: prestadora.dias_aviso_vencimiento_documentos });
+});
+
+panelConfiguracionRouter.post('/documentos-tipo', async (req, res) => {
+  const { nombre, requiere_vencimiento } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'Falta nombre' });
+  const { error } = await supabase
+    .from('tipos_documento_asistente')
+    .insert({ nombre, requiere_vencimiento: requiere_vencimiento ?? true, prestadora_id: req.usuarioPanel.prestadoraId });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+panelConfiguracionRouter.patch('/documentos-tipo/plazo-aviso', async (req, res) => {
+  const { dias } = req.body;
+  if (!Number.isInteger(dias) || dias <= 0) {
+    return res.status(400).json({ error: 'dias debe ser un entero positivo' });
+  }
+  const { error } = await supabase
+    .from('prestadoras')
+    .update({ dias_aviso_vencimiento_documentos: dias })
+    .eq('id', req.usuarioPanel.prestadoraId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+panelConfiguracionRouter.patch('/documentos-tipo/:id', async (req, res) => {
+  const { nombre, requiere_vencimiento, activo } = req.body;
+  let query = supabase
+    .from('tipos_documento_asistente')
+    .update({ nombre, requiere_vencimiento, activo })
+    .eq('id', req.params.id);
+  if (req.usuarioPanel.rol !== 'superadmin') {
+    query = query.eq('prestadora_id', req.usuarioPanel.prestadoraId);
+  }
+  const { error } = await query;
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // --- Escalada a Coordinador: respaldo + intervalos de insistencia según premura
 //     (punto 5 de docs/PRD_06_WhatsApp_IA.md) ---
 panelConfiguracionRouter.get('/escalada-coordinador', async (req, res) => {
