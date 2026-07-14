@@ -33,6 +33,15 @@ titularidad/copyright del software cambia a PLM Systems — ver el glosario abaj
 
 ## El riesgo legal que condiciona el diseño (leer antes de tocar cualquier flujo de Asistente)
 
+**Nota de alcance (agregada 2026-07-14, ver pendiente #30 de `docs/PENDIENTES.md`):** este
+bloque describe derecho **argentino** (art. 23 LCT, caso Cabify), aplicable al régimen legal
+del usuario de prueba que guía el desarrollo hoy — no es una regla universal válida para
+cualquier prestadora. La única legislación con validez para una prestadora dada es la del
+país donde esté radicada. Mientras no exista una prestadora real fuera de Argentina, este
+bloque se aplica como marco de referencia por defecto; al incorporarse la primera prestadora
+de otra jurisdicción, este bloque debe revisarse y, si corresponde, parametrizarse por país
+en vez de asumirse como universal.
+
 Los Asistentes son monotributistas independientes, no empleados. El art. 23 LCT presume
 relación de dependencia y el caso Cabify (2021) es precedente desfavorable para plataformas
 que asignan y controlan. Por eso:
@@ -68,13 +77,14 @@ reproponer sin resolver primero el riesgo legal de fondo.
 | Coordinador | supervisor, jefe, encargado |
 | Vínculo / Cese | contrato de trabajo, despido (salvo causal literal de despido) |
 | Inversor | nombre propio del socio potencial (no confirmado) |
-| Superadmin | rol técnico, login propio, distinto de Admin — no confundir ni fusionar con Admin en código ni en UI |
+| Superadmin | rol técnico (código/infra/base de datos), login propio, MFA obligatorio, distinto de Admin_prestadora y de Admin_plataforma. Acceso de Panel únicamente a una prestadora de prueba fija (sandbox) — vedado el acceso a cualquier prestadora real, ninguna tarea técnica lo justifica. No es cross-tenant, no confundir ni fusionar con Admin_prestadora ni Admin_plataforma en código ni en UI. Diseño completo en `docs/PLAN_MULTITENANT_PLM.md` 3.4/3.4.1 (agregado 2026-07-13, reemplaza el alcance cross-tenant sin límites que este rol tenía documentado antes de esa fecha) |
+| Admin_plataforma (rol técnico, `usuarios.rol`, agregado 2026-07-13) | administrativo de negocio real de toda la plataforma (todas las prestadoras licenciatarias) — comercial, administrativo, gestión de cuentas Admin_prestadora. Login propio, MFA obligatorio. Entra a una prestadora real una a la vez, nunca varias a la vez, bajo el "modo dentro de una prestadora" (banner notorio, advertencia agregada a las confirmaciones de acciones destructivas de la Regla 4, log de auditoría de todo login/acción sensible, timeout de 5 min de inactividad + tope absoluto de 60 min con aviso a los 50 si sigue activo) — mientras está adentro, cero visibilidad de cualquier otra prestadora. Nombre elegido deliberadamente desacoplado de la razón social de la empresa dueña del software (no "admin_plm"), para que un cambio societario futuro no deje resabios de nombre en código/RLS. Diseño completo, código todavía sin implementar: `docs/PLAN_MULTITENANT_PLM.md` 3.4/3.4.1 |
 | PLM Systems | dueña/licenciante del software — usar solo para titularidad/copyright del software, nunca como marca del negocio de cuidado domiciliario |
-| Prestadora | empresa licenciataria del software (prestadora-original es la primera) — en el modelo de datos futuro, "organización"/tenant. No confundir con "Familia" ni con "Asistente" |
+| Prestadora | empresa licenciataria del software — en el modelo de datos futuro, "organización"/tenant. No confundir con "Familia" ni con "Asistente". El usuario de prueba que hoy guía el desarrollo ocupa la única fila real de datos, pero **no es cliente** (sin contrato firmado a la fecha) — no tiene ni tendrá ningún estatus especial en el diseño ("primera", "de referencia", etc.) solo por ese motivo. Ver `docs/PENDIENTES.md` |
 | Admin_prestadora (rol técnico, `usuarios.rol`) | rol de gestión acotado a la propia prestadora, cero visibilidad de otras — es el rol `admin` renombrado en el marco multi-tenant (`docs/PLAN_MULTITENANT_PLM.md` 4.1). Rename de dato + reescritura de las ~28 policies RLS que dependían del valor, ejecutados juntos en el Bloque 2 de `docs/Prompt_Claude_Code_Kickoff_Implementacion.md` (`backend/src/db/schema_multitenant_02.sql`, aplicado 2026-07-09/10) — el valor `admin` ya no existe en el dato ni en el código de autorización, no queda ningún caso de transición pendiente |
 | Desarrollador (en la documentación, para referirse a quien dirige el desarrollo y aprueba las decisiones que Claude Code le eleva) | "Alberto"/"Inversor" como estand-in genérico de esa persona — no es un rol del sistema (ver `Admin`/`Superadmin` en `docs/SECURITY.md`), ni tiene relación con la fila "Inversor" de esta misma tabla (que sí es un hecho societario real, ver `docs/Exclusivo prestadora-original/prestadora-original_Fundacional_v3.pdf`) |
 | Cumplimiento normativo (documental, por prestadora) | compliance — término de negocio nuevo detectado sin aprobación previa en `docs/PLAN_MULTITENANT_PLM.md` (barrido 2026-07-10) y corregido; entidad futura `cumplimiento_normativo_prestadora`, todavía sin implementar en código |
-| Ausente sin relevo previo | cualquier término en inglés o genérico para este caso — un Asistente que no se presenta a una guardia cuando no había ningún Asistente de prestadora-original cubriendo antes que él (ej. primera guardia del día para un Paciente). Distinto de un "ausente" con relevo: acá no hay nadie "saliente" atrapado esperando, el Paciente puede quedar completamente solo — es el escenario de mayor riesgo del protocolo de continuidad de guardia. En el esquema técnico, `incidentes_relevo.guardia_saliente_id` queda `NULL` en este caso (`backend/src/db/schema_modulo6_guardias.sql`) |
+| Ausente sin relevo previo | cualquier término en inglés o genérico para este caso — un Asistente que no se presenta a una guardia cuando no había ningún otro Asistente cubriendo antes que él (ej. primera guardia del día para un Paciente). Distinto de un "ausente" con relevo: acá no hay nadie "saliente" atrapado esperando, el Paciente puede quedar completamente solo — es el escenario de mayor riesgo del protocolo de continuidad de guardia. En el esquema técnico, `incidentes_relevo.guardia_saliente_id` queda `NULL` en este caso (`backend/src/db/schema_modulo6_guardias.sql`) |
 
 Esto aplica a nombres de variables, tablas, componentes y claves de i18n, no solo a texto visible.
 

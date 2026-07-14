@@ -340,40 +340,117 @@ negocio, según el propio prompt).
 
 ### 3.4 Roles nuevos y puntos exactos de código a tocar
 
+**Modelo de 3 niveles (diseñado 2026-07-13, reemplaza la versión anterior de este punto que
+conflacionaba `superadmin` = "PLM cross-tenant sin límites" — ver nota de reemplazo abajo):**
+
 - **`admin_prestadora`** (nuevo valor del `CHECK` de `usuarios.rol`, o revisión del rol
   `admin` existente — ver decisión abierta 4.1): acceso de gestión a los datos de su propia
   `prestadora_id` únicamente — su personal, sus pacientes/casos, sus reportes y alertas.
   Cero visibilidad de otras prestadoras.
-- **`superadmin`** pasa a ser, en el diseño multi-tenant, el rol de **PLM Systems**:
-  cross-tenant real, ve todas las prestadoras. Esto es coherente con cómo ya está descripto
-  en `docs/SECURITY.md` (login propio, separado de `admin`) pero cambia su alcance de
-  "toda prestadora-original" a "toda la plataforma, todas las prestadoras".
+- **`superadmin`**: rol **técnico** (código/infra/base de datos), sin carácter
+  administrativo de negocio. Acceso de Panel **únicamente** a una prestadora de prueba fija
+  (sandbox, no un cliente real) — sirve para ver y probar cambios en un entorno controlado.
+  **Vedado el acceso, por cualquier vía del Panel, a cualquier prestadora real** — ninguna
+  tarea técnica lo justifica; el trabajo de infraestructura/DB se hace por fuera del Panel,
+  con herramientas propias del rol técnico, no impersonando un tenant vía UI. No es
+  cross-tenant: no ve datos de ninguna prestadora real, ni siquiera en modo lectura.
+- **`admin_plataforma`** (rol nuevo, reemplaza lo que este documento llamaba antes
+  "`superadmin` = PLM Systems"): administrativo de negocio real — control comercial/
+  administrativo de toda la plataforma (todas las prestadoras licenciatarias). Nombre
+  elegido deliberadamente **desacoplado de la razón social de la empresa dueña del software**
+  (no `admin_plm`, no ligado a "PLM Systems") para que un cambio societario futuro no deje
+  resabios de nombre en código/RLS/policies — coherente con la convención ya usada en el
+  proyecto de decir "la plataforma", nunca el nombre propio de la empresa licenciante (ver
+  `CLAUDE.md`, glosario, fila `Prestadora`). Puede entrar a una prestadora real **una a la
+  vez**, nunca varias simultáneamente, bajo el modo "dentro de una prestadora" descripto en
+  3.4.1 — mientras está adentro, cero visibilidad de cualquier otra prestadora.
 - **`financiador`** (obra social/prepaga): contemplado en el diseño (nombre de rol, alcance
   de solo lectura agregada), **no implementado** — tal como pide el punto 3 del prompt de
   negocio.
 
+**Nota de reemplazo:** la versión anterior de este documento (hasta 2026-07-13) describía
+`superadmin` como "el rol de PLM Systems... cross-tenant real, ve todas las prestadoras".
+Se descarta ese diseño: conflacionaba en un solo rol el acceso técnico (infra/código) con el
+acceso administrativo de negocio (comercial, todas las prestadoras), lo cual no tenía
+justificación técnica real para el primero y no tenía ningún límite de sesión/alcance para
+el segundo. `docs/SECURITY.md` tenía la misma descripción y se corrige en el mismo barrido.
+
+#### 3.4.1 — Modo "dentro de una prestadora" (exclusivo de `admin_plataforma`)
+
+Mecanismo técnico pendiente de implementar (diseño aprobado, código todavía no escrito):
+`current_tenant()` hoy (`schema_multitenant_02.sql:32-35`) devuelve un `prestadora_id` fijo
+leído de la propia fila de `usuarios` — no sirve para `admin_plataforma`, que no tiene una
+prestadora propia y necesita elegir cuál mirar en cada sesión. Requiere un contexto de
+tenant **dinámico y acotado en el tiempo**, no un simple bypass de RLS como el `es_superadmin()`
+actual:
+
+- Al "entrar" a una prestadora, se crea un registro de sesión (tabla nueva, ej.
+  `sesiones_tenant_admin_plataforma`: `admin_id`, `prestadora_id`, `entrada_at`,
+  `expira_at`) — mientras exista una fila vigente (no expirada) para ese `admin_id`,
+  `current_tenant()` devuelve ese `prestadora_id` en vez de bypass total; sin sesión activa,
+  `admin_plataforma` no ve ninguna prestadora (tiene que elegir una primero).
+- `es_superadmin()` deja de ser un bypass total: pasa a comprobar que el `prestadora_id` de
+  la fila sea el de la prestadora de prueba fija (sandbox), nunca un OR incondicional como
+  hoy (`schema_multitenant_02.sql:39-44`) — este cambio de RLS es trabajo de código
+  pendiente, no incluido en este documento de diseño.
+- **Wrapper de seguridad/UX mientras `admin_plataforma` está "dentro" de una prestadora**
+  (acordado 2026-07-13, con el Desarrollador, tras 4 rondas de refinamiento):
+  - Indicador visual permanente y muy notorio (banner) distinto al resto del Panel,
+    imposible de confundir con el uso normal.
+  - La advertencia de "en qué prestadora estás" se agrega a las confirmaciones de acciones
+    destructivas ya existentes (Regla 4 de `CLAUDE.md`), no en cada acción — evita fatiga de
+    alertas sin perder la advertencia donde más importa.
+  - Log de auditoría inmutable: no solo entrada/salida del modo prestadora, sino toda acción
+    sensible realizada por `admin_plataforma` o `superadmin` — quién, cuándo, IP, qué hizo.
+  - **Timeout doble, calibrado como apps bancarias** (a pedido explícito del Desarrollador,
+    más corto que un timeout administrativo genérico):
+    - **5 minutos de inactividad** → sale del modo prestadora automáticamente y sin aviso
+      previo (no es un logout de la cuenta, solo sale del contexto de tenant).
+    - **Tope absoluto de 60 minutos** desde la entrada, con **aviso a los 50 minutos si
+      sigue activo**, para no cortar ninguna tarea a la mitad — a los 60 minutos se corta
+      salvo que reconfirme que necesita seguir adentro.
+- Buenas prácticas de identificación para ambos roles (`superadmin` y `admin_plataforma`),
+  acordadas 2026-07-13:
+  - Cuentas nominales, nunca genéricas ni compartidas entre personas — el rol es un nivel de
+    permiso, no una identidad; cada persona real tiene su propia cuenta.
+  - MFA obligatorio en el login de ambos roles (radio de impacto máximo: toda la plataforma).
+  - El log de auditoría de 3.4.1 cubre todo login y toda acción sensible de estos dos roles,
+    no solo la entrada/salida de prestadora.
+
+**Extensibilidad futura (señalada, no diseñada todavía):** el Desarrollador anticipó roles
+adicionales más acotados (coordinador de plataforma, ventas, personal, etc.), "donde se
+configuren los roles se verá" — esto sugiere que en algún momento `usuarios.rol` deja de ser
+un `CHECK` fijo (lista cerrada de strings) y pasa a una tabla de roles/permisos configurable.
+Es un cambio de arquitectura mayor, fuera de alcance de este documento — no mezclar con la
+implementación de `superadmin`/`admin_plataforma` de arriba.
+
 Puntos de código concretos que hay que tocar si se ejecuta la opción (a) de 4.1
-(`admin` → `admin_prestadora`, `superadmin` = PLM cross-tenant):
+(`admin` → `admin_prestadora`) **más** el cambio de alcance de `superadmin` y el alta de
+`admin_plataforma` descriptos arriba en 3.4/3.4.1 — todo pendiente de implementación, no
+hecho todavía:
 
 - `panel/src/lib/roles.js:8` — `ROLES_PANEL = ['admin', 'coordinador', 'superadmin']` pasa a
-  `['admin_prestadora', 'coordinador', 'superadmin']`. `esAdminOSuperior()` (línea 4-6) queda
-  igual en forma, solo cambia el string comparado.
+  `['admin_prestadora', 'coordinador', 'superadmin', 'admin_plataforma']`, con
+  `superadmin` restringido en el propio Panel a la prestadora de prueba (no solo un cambio
+  de string — necesita la lógica de 3.4.1 para saber en qué prestadora está parado cada
+  rol). `esAdminOSuperior()` (línea 4-6) hay que revisarla: ya no alcanza con "es admin o
+  superior", hay que distinguir explícitamente `admin_plataforma` (cross-tenant acotado por
+  sesión) de `admin_prestadora`/`coordinador` (acotados a su propia prestadora fija).
 - `backend/src/middleware/requiereRolPanel.js:22` — el `.includes(perfil.rol)` contra
   `['admin', 'coordinador', 'superadmin']` es la puerta de entrada de **todas** las rutas de
-  panel; se actualiza ahí y en ningún otro lado (es el único punto de verdad de "¿este rol
-  puede entrar al panel?").
+  panel; se actualiza ahí (agregando `admin_prestadora` y `admin_plataforma`) y en ningún
+  otro lado (es el único punto de verdad de "¿este rol puede entrar al panel?").
 - `backend/src/routes/panelUsuarios.js:12` (`requiereAdminOSuperior`) y `:19-21`
   (`rolesGestionables()`): hoy `rolesGestionables('superadmin')` devuelve
   `['admin', 'coordinador', 'superadmin']` y cualquier otro rol devuelve solo `['coordinador']`
-  — es decir, hoy un `admin` **no puede** gestionar otras cuentas `admin`, solo `superadmin`
-  puede. Con `admin_prestadora`, este mismo criterio se mantiene pero acotado a la propia
-  prestadora: `admin_prestadora` gestiona `coordinador` de su prestadora, `superadmin`
-  (PLM) gestiona `admin_prestadora` de cualquier prestadora. Esta función es también donde
-  se agregaría, el día que exista, la restricción cross-tenant explícita (un
-  `admin_prestadora` no puede editar usuarios de otra `prestadora_id`, algo que hoy no aplica
-  porque no hay más de una organización).
+  — con el modelo nuevo, `admin_plataforma` (no `superadmin`) es quien gestiona
+  `admin_prestadora` de cualquier prestadora; `superadmin` no gestiona cuentas de negocio de
+  ninguna prestadora real. Esta función es también donde se agregaría, el día que exista, la
+  restricción cross-tenant explícita (un `admin_prestadora` no puede editar usuarios de otra
+  `prestadora_id`, algo que hoy no aplica porque no hay más de una organización).
 - Cada policy `admin_*`/`EXISTS (... u.rol IN ('admin', 'superadmin') ...)` en
-  `schema_etapa2i.sql` y el resto de los `schema_etapa2*.sql` — mismo cambio de string, pero
+  `schema_etapa2i.sql` y el resto de los `schema_etapa2*.sql` — mismo cambio de string, más
+  el reemplazo del bypass total de `es_superadmin()` por la lógica acotada de 3.4.1, pero
   ver 3.6 antes de tocarlas una por una.
 
 Sobre la opción (b) de 4.1 (no renombrar, solo agregar `admin_prestadora` como sinónimo de

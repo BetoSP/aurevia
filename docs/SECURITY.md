@@ -62,15 +62,16 @@ implementar antes de que haya datos reales de pacientes/Asistentes/familias en p
 
 ## RBAC — roles del sistema
 
-Los 5 roles reales del proyecto (nota histórica: Money Suite usaba genéricos
+Los 6 roles reales del proyecto (nota histórica: Money Suite usaba genéricos
 `super_admin`/`operations_manager` sin correspondencia en ningún PRD de prestadora-original en ese
 momento — desde el 2026-07-07 sí existe un `superadmin` real, pero es una decisión propia
 de prestadora-original, con alcance distinto, no el que traía Money Suite):
 
 | Rol | Alcance |
 |---|---|
-| `superadmin` | Todo lo de `admin_prestadora`, en todas las prestadoras: configuración profunda del sistema, alta/baja de elementos sensibles, uso de herramientas de IA para diagnóstico/corrección de errores. Login propio, separado del de `admin_prestadora` |
-| `admin_prestadora` | Todo el negocio de su propia prestadora (sin el acceso técnico de `superadmin`, cero visibilidad de otras prestadoras) |
+| `superadmin` | Técnico (código/infra/base de datos), sin carácter administrativo de negocio. Acceso de Panel únicamente a una prestadora de prueba fija (sandbox) — vedado el acceso a cualquier prestadora real, ninguna tarea técnica lo justifica. No es cross-tenant. Login propio, MFA obligatorio |
+| `admin_plataforma` | Administrativo de negocio de toda la plataforma (todas las prestadoras licenciatarias): comercial, administrativo, gestión de cuentas `admin_prestadora`. Entra a una prestadora real una a la vez, con sesión acotada en el tiempo — ver "modo dentro de una prestadora" abajo. Login propio, MFA obligatorio |
+| `admin_prestadora` | Todo el negocio de su propia prestadora (cero visibilidad de otras prestadoras) |
 | `coordinador` | Su zona asignada (familias, pacientes, guardias, Asistentes de esa zona), dentro de su propia prestadora |
 | `asistente` | Sus propias guardias, su perfil, su certificado |
 | `familia` | Sus pacientes, reportes y alertas de sus pacientes |
@@ -81,13 +82,34 @@ transición pendiente, no queda ningún registro ni ruta con el valor `admin`) a
 multi-tenant real, para reflejar que su alcance quedó acotado a una sola prestadora. Ver
 glosario de `CLAUDE.md`.
 
-`superadmin` es el único rol, además de `admin_prestadora`, con acceso de escritura a
+**Nota (2026-07-13, reemplaza la descripción anterior de `superadmin` en esta tabla):**
+hasta esta fecha `superadmin` se describía como "todo lo de `admin_prestadora`, en todas las
+prestadoras" — un bypass cross-tenant total sin límite de sesión. Se descarta: conflacionaba
+acceso técnico (infra/código, sin necesidad real de tocar datos de negocio de una
+prestadora real) con acceso administrativo de negocio (comercial, todas las prestadoras).
+El diseño de reemplazo (roles `superadmin` acotado a sandbox + `admin_plataforma` nuevo,
+con el "modo dentro de una prestadora" — banner notorio, advertencia en acciones
+destructivas vía Regla 4 de `CLAUDE.md`, log de auditoría de todo login/acción sensible,
+timeout de 5 min de inactividad + tope de 60 min con aviso a los 50) está documentado
+completo en `docs/PLAN_MULTITENANT_PLM.md` sección 3.4/3.4.1. El mecanismo técnico de
+`current_tenant()` dinámico por sesión que ese modo requiere **todavía no está
+implementado** — solo el diseño está aprobado.
+
+`admin_plataforma` es el único rol, además de `admin_prestadora`, con acceso de escritura a
 configuración de sistema (planes/módulos activables, si se construye esa idea de
 `PRD_02_Panel_Admin.md` Módulo 8) y a cualquier herramienta de diagnóstico asistido por IA
 que se construya sobre logs/errores de la aplicación — no exponer esas herramientas a
-`admin_prestadora` ni a `coordinador`.
+`admin_prestadora` ni a `coordinador`. `superadmin` no tiene este acceso: su alcance es
+código/infra por fuera del Panel, no configuración de negocio dentro de él.
 
 ## Multi-tenancy — `current_tenant()` y `es_superadmin()` (Bloque 2, aplicado y verificado)
+
+**Nota (2026-07-13):** el código de abajo es el estado **actual** aplicado (Bloque 2) —
+`es_superadmin()` sigue siendo hoy un bypass total sin acotar. El diseño aprobado en
+`docs/PLAN_MULTITENANT_PLM.md` 3.4.1 reemplaza este comportamiento (sesión de tenant dinámica
+para `admin_plataforma`, `superadmin` acotado a la prestadora de prueba) pero **todavía no
+está implementado en código** — no asumir que las funciones de abajo ya reflejan el modelo
+nuevo.
 
 Toda policy de RLS escrita desde el Bloque 2 en adelante usa estas dos funciones SQL en vez
 de repetir el `EXISTS (SELECT ... FROM usuarios WHERE id = auth.uid() ...)` a mano:
