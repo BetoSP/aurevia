@@ -26,6 +26,7 @@ export function Layout() {
           <NavLink to="/continuidad">{t.nav.continuidad}</NavLink>
           <NavLink to="/lista-precios">{t.nav.lista_precios}</NavLink>
           {esAdminOSuperior(usuario?.rol) && <NavLink to="/usuarios-panel">{t.nav.usuarios_panel}</NavLink>}
+          {['admin_plataforma', 'superadmin'].includes(usuario?.rol) && <NavLink to="/prestadoras">{t.nav.prestadoras}</NavLink>}
           {esAdminOSuperior(usuario?.rol) && <NavLink to="/configuracion">{t.nav.configuracion}</NavLink>}
         </nav>
       </aside>

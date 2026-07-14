@@ -24,6 +24,16 @@ async function llamarApi(path, opciones = {}) {
   return resultado;
 }
 
+async function listarPrestadoras() {
+  const { data } = await supabase.auth.getSession();
+  const respuesta = await fetch(`${API_URL}/api/panel/prestadoras`, {
+    headers: { Authorization: `Bearer ${data.session?.access_token}` },
+  });
+  const resultado = await respuesta.json();
+  if (!respuesta.ok) throw new Error(resultado.error);
+  return resultado.prestadoras;
+}
+
 export function UsuariosPanel() {
   const { t } = useLocale();
   const { usuario } = useAuth();
@@ -124,21 +134,33 @@ function NuevoUsuarioPanel({ esSuperadmin, onClose, onCreado }) {
   const [telefono, setTelefono] = useState('');
   const [zonas, setZonas] = useState('');
   const [rol, setRol] = useState('coordinador');
+  const [prestadoraId, setPrestadoraId] = useState('');
+  const [prestadoras, setPrestadoras] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [creado, setCreado] = useState(null);
+
+  useEffect(() => {
+    if (!esSuperadmin) return;
+    listarPrestadoras().then(setPrestadoras).catch((err) => setError(err.message));
+  }, [esSuperadmin]);
 
   async function handleGuardar() {
     setGuardando(true);
     setError(null);
     try {
+      const rolFinal = esSuperadmin ? rol : 'coordinador';
       const resultado = await llamarApi('', {
         method: 'POST',
         body: JSON.stringify({
           email,
           nombre,
           telefono,
-          rol: esSuperadmin ? rol : 'coordinador',
+          rol: rolFinal,
+          // prestadora_id solo tiene sentido para admin_prestadora/coordinador — una
+          // cuenta superadmin nueva siempre nace en la sandbox, el backend ignora este
+          // campo en ese caso (backend/src/routes/panelUsuarios.js).
+          prestadora_id: esSuperadmin && rolFinal !== 'superadmin' ? prestadoraId || undefined : undefined,
           zonas: zonas.split(',').map((z) => z.trim()).filter(Boolean),
         }),
       });
@@ -185,12 +207,20 @@ function NuevoUsuarioPanel({ esSuperadmin, onClose, onCreado }) {
             <option value="superadmin">{t.usuarios_panel.rol_superadmin}</option>
           </FormField>
         )}
+        {esSuperadmin && rol === 'admin_prestadora' && (
+          <FormField label={t.usuarios_panel.campo_prestadora} name="prestadora_id" type="select" value={prestadoraId} onChange={(e) => setPrestadoraId(e.target.value)} required>
+            <option value="">{t.usuarios_panel.prestadora_placeholder}</option>
+            {prestadoras.map((p) => (
+              <option key={p.id} value={p.id}>{p.nombre_fantasia} ({p.estado})</option>
+            ))}
+          </FormField>
+        )}
         <FormField label={t.usuarios_panel.col_telefono} name="telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
         <FormField label={t.usuarios_panel.col_zonas} name="zonas" value={zonas} onChange={(e) => setZonas(e.target.value)} placeholder={t.usuarios_panel.zonas_placeholder} />
         <p className="panel-explicacion">{t.usuarios_panel.aviso_password_temporal}</p>
         <div className="panel-modal-acciones">
           <Button variant="secondary" onClick={onClose} disabled={guardando}>{t.comun.cancelar}</Button>
-          <Button onClick={handleGuardar} disabled={guardando || !email || !nombre}>
+          <Button onClick={handleGuardar} disabled={guardando || !email || !nombre || (esSuperadmin && rol === 'admin_prestadora' && !prestadoraId)}>
             {guardando ? t.comun.guardando : t.comun.guardar}
           </Button>
         </div>

@@ -16,6 +16,7 @@ import { Guardias } from './pages/Guardias';
 import { Continuidad } from './pages/Continuidad';
 import { ListaPrecios } from './pages/ListaPrecios';
 import { UsuariosPanel } from './pages/UsuariosPanel';
+import { Prestadoras } from './pages/Prestadoras';
 import { Configuracion } from './pages/Configuracion';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
                 <Route path="continuidad" element={<Continuidad />} />
                 <Route path="lista-precios" element={<ListaPrecios />} />
                 <Route path="usuarios-panel" element={<ProtectedRoute soloAdmin><UsuariosPanel /></ProtectedRoute>} />
+                <Route path="prestadoras" element={<ProtectedRoute roles={['admin_plataforma', 'superadmin']}><Prestadoras /></ProtectedRoute>} />
                 <Route path="configuracion" element={<ProtectedRoute soloAdmin><Configuracion /></ProtectedRoute>} />
               </Route>
             </Routes>
