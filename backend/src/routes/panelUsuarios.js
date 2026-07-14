@@ -63,11 +63,14 @@ panelUsuariosRouter.post('/', requiereRolPanel, requiereAdminOSuperior, async (r
     return res.status(403).json({ error: 'No tenés permiso para crear cuentas con ese rol' });
   }
 
-  // Superadmin no "pertenece" a una prestadora (su columna prestadora_id solo está
-  // backfillada por consistencia de esquema) — puede dar de alta el primer usuario de
-  // cualquier licenciataria, eligiendo el destino explícitamente. Admin_prestadora nunca
-  // puede elegir: sus cuentas nuevas siempre nacen en su propia prestadora.
-  const prestadoraDestino = req.usuarioPanel.rol === 'superadmin' && prestadora_id
+  // Superadmin puede elegir el destino explícitamente al dar de alta admin_prestadora/
+  // coordinador de cualquier licenciataria. Pero nunca para una cuenta superadmin nueva:
+  // esas quedan SIEMPRE ancladas a la sandbox (docs/PLAN_MULTITENANT_PLM.md 3.4) — permitir
+  // el override acá dejaría a un superadmin asignarle a otro superadmin la prestadora_id de
+  // una prestadora real, evadiendo el acotamiento aplicado en
+  // schema_admin_plataforma_02_acotar_superadmin.sql. Admin_prestadora nunca puede elegir:
+  // sus cuentas nuevas siempre nacen en su propia prestadora.
+  const prestadoraDestino = req.usuarioPanel.rol === 'superadmin' && prestadora_id && rolNuevo !== 'superadmin'
     ? prestadora_id
     : req.usuarioPanel.prestadoraId;
 
