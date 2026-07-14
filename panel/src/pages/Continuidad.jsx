@@ -14,6 +14,7 @@ export function Continuidad() {
   const { usuario } = useAuth();
   const [incidentes, setIncidentes] = useState([]);
   const [alertas, setAlertas] = useState([]);
+  const [notificacionesCierre, setNotificacionesCierre] = useState([]);
   const [estado, setEstado] = useState('cargando');
   const [error, setError] = useState(null);
   const [incidenteResolviendo, setIncidenteResolviendo] = useState(null);
@@ -24,12 +25,18 @@ export function Continuidad() {
     setEstado('cargando');
     setError(null);
     try {
-      const [{ data: incidentesData, error: errorIncidentes }, { data: alertasData, error: errorAlertas }] = await Promise.all([
+      const [
+        { data: incidentesData, error: errorIncidentes },
+        { data: alertasData, error: errorAlertas },
+        { data: notificacionesData, error: errorNotificaciones },
+      ] = await Promise.all([
         supabase.from('incidentes_relevo').select('*').is('resuelto_at', null).order('iniciado_at', { ascending: true }),
         supabase.from('alertas_tempranas_guardia').select('*').is('resuelto_at', null).order('detectado_at', { ascending: true }),
+        supabase.from('notificaciones_cierre_servicio').select('*').is('visto_at', null).order('created_at', { ascending: true }),
       ]);
       if (errorIncidentes) throw errorIncidentes;
       if (errorAlertas) throw errorAlertas;
+      if (errorNotificaciones) throw errorNotificaciones;
 
       const idsGuardias = Array.from(
         new Set([
@@ -45,17 +52,29 @@ export function Continuidad() {
         supabase.from('configuracion_escalada_relevo').select('*').order('nivel'),
       ]);
 
-      const idsPacientes = Array.from(new Set((guardiasData ?? []).map((g) => g.paciente_id)));
+      const idsPacientesGuardias = Array.from(new Set((guardiasData ?? []).map((g) => g.paciente_id)));
+      const idsPacientesNotificaciones = (notificacionesData ?? []).map((n) => n.paciente_id);
+      const idsPacientes = Array.from(new Set([...idsPacientesGuardias, ...idsPacientesNotificaciones]));
+      const idsCoordinadores = Array.from(new Set((notificacionesData ?? []).map((n) => n.cerrado_por)));
 
-      const [{ data: pacientesData }, { data: asistentesData }] = await Promise.all([
+      const [{ data: pacientesData }, { data: asistentesData }, { data: coordinadoresData }] = await Promise.all([
         idsPacientes.length ? supabase.from('pacientes').select('id, nombre').in('id', idsPacientes) : Promise.resolve({ data: [] }),
         supabase.from('asistentes').select('id, nombre').order('nombre'),
+        idsCoordinadores.length ? supabase.from('usuarios').select('id, nombre').in('id', idsCoordinadores) : Promise.resolve({ data: [] }),
       ]);
 
       const guardiasPorId = Object.fromEntries((guardiasData ?? []).map((g) => [g.id, g]));
       const pacientesPorId = Object.fromEntries((pacientesData ?? []).map((p) => [p.id, p.nombre]));
       const asistentesPorId = Object.fromEntries((asistentesData ?? []).map((a) => [a.id, a.nombre]));
+      const coordinadoresPorId = Object.fromEntries((coordinadoresData ?? []).map((c) => [c.id, c.nombre]));
       const nivelesPorNumero = Object.fromEntries((nivelesData ?? []).map((n) => [n.nivel, n]));
+
+      const filasNotificaciones = (notificacionesData ?? []).map((n) => ({
+        ...n,
+        paciente_nombre: pacientesPorId[n.paciente_id] || '—',
+        asistente_nombre: asistentesPorId[n.asistente_id] || '—',
+        cerrado_por_nombre: coordinadoresPorId[n.cerrado_por] || '—',
+      }));
 
       const filas = (incidentesData ?? []).map((i) => {
         const gEntrante = guardiasPorId[i.guardia_entrante_id];
@@ -85,6 +104,7 @@ export function Continuidad() {
 
       setIncidentes(filas);
       setAlertas(filasAlertas);
+      setNotificacionesCierre(filasNotificaciones);
       setAsistentesDisponibles(asistentesData ?? []);
       setEstado('listo');
     } catch (err) {
@@ -113,6 +133,22 @@ export function Continuidad() {
   useEffect(() => {
     recargar();
   }, [recargar]);
+
+  async function marcarVistaNotificacion(notificacion) {
+    setActualizandoId(notificacion.id);
+    try {
+      const { error: errorUpdate } = await supabase
+        .from('notificaciones_cierre_servicio')
+        .update({ visto_at: new Date().toISOString(), visto_por: usuario.id })
+        .eq('id', notificacion.id);
+      if (errorUpdate) throw errorUpdate;
+      recargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActualizandoId(null);
+    }
+  }
 
   async function avanzarNivel(incidente) {
     setActualizandoId(incidente.id);
@@ -200,6 +236,34 @@ export function Continuidad() {
             <div className="panel-modal-acciones">
               <Button onClick={() => resolverAlerta(a)} disabled={actualizandoId === a.id}>
                 {t.continuidad.resolver_alerta}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </EstadoLista>
+
+      <h2>{t.continuidad.notificaciones_cierre_titulo}</h2>
+      <p className="panel-explicacion">{t.continuidad.notificaciones_cierre_explicacion}</p>
+
+      <EstadoLista
+        estado={estado}
+        error={null}
+        vacio={estado === 'listo' && notificacionesCierre.length === 0}
+        recargar={recargar}
+        mensajeVacio={t.continuidad.notificaciones_cierre_vacio}
+      >
+        {notificacionesCierre.map((n) => (
+          <div key={n.id} className="panel-guardia-card guardia-ausente">
+            <div>
+              <strong>{t.continuidad.col_paciente}: {n.paciente_nombre}</strong>
+              <div>{t.continuidad.col_ausente}: {n.asistente_nombre}</div>
+              <div>{t.continuidad.notificaciones_cierre_cerrado_por}: {n.cerrado_por_nombre}</div>
+              <div>{t.continuidad.col_motivo}: {t.prestaciones[`cierre_servicio_motivo_${n.motivo}`] || n.motivo}</div>
+              {n.motivo_detalle && <div>{n.motivo_detalle}</div>}
+            </div>
+            <div className="panel-modal-acciones">
+              <Button onClick={() => marcarVistaNotificacion(n)} disabled={actualizandoId === n.id}>
+                {t.continuidad.notificaciones_cierre_marcar_visto}
               </Button>
             </div>
           </div>

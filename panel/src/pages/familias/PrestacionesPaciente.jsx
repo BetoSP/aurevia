@@ -168,17 +168,47 @@ export function PrestacionesPaciente({ paciente, onClose }) {
     setCerrandoServicio(true);
     setErrorCierre(null);
 
-    const { error: errorInsert } = await supabase.from('cierres_servicio_paciente').insert({
-      prestadora_id: usuario.prestadora_id,
-      paciente_id: paciente.id,
-      motivo: motivoCierre,
-      motivo_detalle: motivoCierre === 'otro' ? motivoDetalleCierre : null,
-      cerrado_por: usuario.id,
-    });
+    const { data: cierreInsertado, error: errorInsert } = await supabase
+      .from('cierres_servicio_paciente')
+      .insert({
+        prestadora_id: usuario.prestadora_id,
+        paciente_id: paciente.id,
+        motivo: motivoCierre,
+        motivo_detalle: motivoCierre === 'otro' ? motivoDetalleCierre : null,
+        cerrado_por: usuario.id,
+      })
+      .select()
+      .single();
     if (errorInsert) {
       setCerrandoServicio(false);
       setErrorCierre(errorInsert.message);
       return;
+    }
+
+    // El pre-fetch de Asistentes/zonas involucrados corre recién acá, después del insert
+    // de cierres_servicio_paciente: la policy RLS "coordinador_cierra_servicio_*" que le da
+    // visibilidad a un Coordinador fuera de zona depende de que ese registro ya exista (ver
+    // schema_cierre_servicio_zona_fix.sql). Si este fetch corriera antes del insert (como
+    // en una versión anterior), un Coordinador fuera de zona no ve ninguna fila por RLS y la
+    // notificación cruzada nunca se dispara — bug encontrado probando el flujo real
+    // (docs/PENDIENTES.md #32). Todavía tiene que ir antes de la cascada de abajo, porque
+    // filtra por estado='activa'/'programada'.
+    const [seriesActivasResp, guardiasProgramadasResp] = await Promise.all([
+      supabase
+        .from('series_guardias')
+        .select('asistente_id, asistentes(zonas)')
+        .eq('paciente_id', paciente.id)
+        .eq('estado', 'activa'),
+      supabase
+        .from('guardias')
+        .select('asistente_id, asistentes(zonas)')
+        .eq('paciente_id', paciente.id)
+        .eq('estado', 'programada'),
+    ]);
+
+    const asistentesInvolucrados = new Map();
+    for (const fila of [...(seriesActivasResp.data ?? []), ...(guardiasProgramadasResp.data ?? [])]) {
+      if (fila.asistente_id) asistentesInvolucrados.set(fila.asistente_id, fila.asistentes?.zonas ?? []);
     }
 
     const ahora = new Date().toISOString();
@@ -202,6 +232,26 @@ export function PrestacionesPaciente({ paciente, onClose }) {
     if (errorCascada) {
       setErrorCierre(errorCascada.message);
       return;
+    }
+
+    if (usuario.rol === 'coordinador') {
+      const zonasCoordinador = usuario.zonas ?? [];
+      const asistentesFueraDeZona = [...asistentesInvolucrados.entries()].filter(
+        ([, zonasAsistente]) => !zonasCoordinador.some((z) => (zonasAsistente ?? []).includes(z))
+      );
+      if (asistentesFueraDeZona.length > 0) {
+        await supabase.from('notificaciones_cierre_servicio').insert(
+          asistentesFueraDeZona.map(([asistenteId]) => ({
+            prestadora_id: usuario.prestadora_id,
+            cierre_id: cierreInsertado.id,
+            paciente_id: paciente.id,
+            asistente_id: asistenteId,
+            cerrado_por: usuario.id,
+            motivo: motivoCierre,
+            motivo_detalle: motivoCierre === 'otro' ? motivoDetalleCierre : null,
+          }))
+        );
+      }
     }
 
     setMotivoCierre('');
