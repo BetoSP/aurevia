@@ -208,6 +208,37 @@ h2 {
   min-width: 0;
 }
 
+.banner-sesion-tenant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--naranja-alerta);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.banner-sesion-tenant-salir {
+  background: #FFFFFF;
+  border: none;
+  color: var(--naranja-alerta);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.banner-sesion-tenant-salir:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .panel-header {
   display: flex;
   align-items: center;

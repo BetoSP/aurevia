@@ -1,9 +1,41 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from 'react';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useEmpresa } from '../../context/EmpresaContext';
+import { useTenantSession } from '../../context/TenantSessionContext';
 import { esAdminOSuperior } from '../../lib/roles';
 import { LOCALES } from '../../i18n/translations';
+
+function BannerSesionTenant() {
+  const { t } = useLocale();
+  const { sesion, salir } = useTenantSession();
+  const [saliendo, setSaliendo] = useState(false);
+
+  if (!sesion) return null;
+
+  async function handleSalir() {
+    setSaliendo(true);
+    try {
+      await salir();
+    } finally {
+      setSaliendo(false);
+    }
+  }
+
+  return (
+    <div className="banner-sesion-tenant">
+      <span>
+        <strong>{t.prestadoras.sesion_activa_titulo}:</strong> {sesion.prestadoras?.nombre_fantasia}
+        {' — '}
+        {t.prestadoras.sesion_activa_expira.replace('{hora}', new Date(sesion.expira_at).toLocaleTimeString())}
+      </span>
+      <button className="banner-sesion-tenant-salir" onClick={handleSalir} disabled={saliendo}>
+        {saliendo ? t.prestadoras.saliendo : t.prestadoras.salir}
+      </button>
+    </div>
+  );
+}
 
 export function Layout() {
   const { t, locale, setLocale } = useLocale();
@@ -31,6 +63,7 @@ export function Layout() {
         </nav>
       </aside>
       <div className="panel-main">
+        <BannerSesionTenant />
         <header className="panel-header">
           <span className="panel-usuario">{usuario?.nombre}</span>
           <select value={locale} onChange={(e) => setLocale(e.target.value)}>

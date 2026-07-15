@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
 import { supabase } from '../lib/supabaseClient';
+import { useTenantSession } from '../context/TenantSessionContext';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { EstadoLista } from '../components/layout/EstadoLista';
@@ -24,8 +25,8 @@ async function llamarApi(path, opciones = {}) {
 
 export function Prestadoras() {
   const { t } = useLocale();
+  const { sesion, recargar: recargarSesion, salir } = useTenantSession();
   const [prestadoras, setPrestadoras] = useState([]);
-  const [sesion, setSesion] = useState(null);
   const [estado, setEstado] = useState('cargando');
   const [error, setError] = useState(null);
   const [entrando, setEntrando] = useState(null);
@@ -35,18 +36,17 @@ export function Prestadoras() {
     setEstado('cargando');
     setError(null);
     try {
-      const [{ prestadoras: filas }, { sesion: sesionActiva }] = await Promise.all([
+      const [{ prestadoras: filas }] = await Promise.all([
         llamarApi('/prestadoras'),
-        llamarApi('/sesion-tenant'),
+        recargarSesion(),
       ]);
       setPrestadoras(filas);
-      setSesion(sesionActiva);
       setEstado('listo');
     } catch (err) {
       setError(err.message);
       setEstado('error');
     }
-  }, []);
+  }, [recargarSesion]);
 
   useEffect(() => {
     recargar();
@@ -60,7 +60,7 @@ export function Prestadoras() {
         method: 'POST',
         body: JSON.stringify({ prestadora_id: prestadoraId }),
       });
-      await recargar();
+      await recargarSesion();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,8 +72,7 @@ export function Prestadoras() {
     setSaliendo(true);
     setError(null);
     try {
-      await llamarApi('/sesion-tenant/salir', { method: 'POST' });
-      await recargar();
+      await salir();
     } catch (err) {
       setError(err.message);
     } finally {
