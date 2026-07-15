@@ -6,6 +6,7 @@ import { TenantSessionProvider } from './context/TenantSessionContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 import { Login } from './pages/Login';
+import { Mfa } from './pages/Mfa';
 import { Dashboard } from './pages/Dashboard';
 import { Postulaciones } from './pages/Postulaciones';
 import { Solicitudes } from './pages/Solicitudes';
@@ -30,6 +31,7 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/mfa" element={<Mfa />} />
                 <Route
                   path="/"
                   element={

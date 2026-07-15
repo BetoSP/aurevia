@@ -31,8 +31,15 @@ PWA-first, monitorear en producción antes de considerar migrar a app nativa con
 ## PWA del Asistente (Etapa 3)
 
 ### Login
-Email + magic link (Supabase Auth). Primer login: completar perfil si faltan datos.
-Sesión persistente — no pedir login en cada visita.
+**Decisión revisada 2026-07-15** (pendiente #30 ítem H, extendida acá por el Desarrollador):
+clave alfanumérica (Supabase Auth email/password), no magic link — con opción de
+identificación biométrica (Face ID/Touch ID/Windows Hello vía WebAuthn, si el dispositivo lo
+permite) como método alternativo una vez que el usuario ya inició sesión con contraseña al
+menos una vez. El biométrico es opcional y corre para cualquier rol/login del sistema, no
+solo para esta PWA — se documenta acá porque esta es la primera vez que un login de este
+tipo entra en el build order (Etapa 3, todavía sin empezar). Diseño únicamente, sin código
+todavía. Primer login: completar perfil si faltan datos. Sesión persistente — no pedir login
+en cada visita.
 
 ### Mis Guardias (pantalla principal)
 Lista de guardias asignadas (próximas + historial). Cada card: paciente, dirección, fecha,
@@ -110,7 +117,11 @@ Nueva guardia asignada, mensajes del coordinador, recordatorios.
 ## PWA de la Familia (Etapa 4)
 
 ### Login
-Email + magic link (Supabase Auth), sesión persistente.
+**Decisión revisada 2026-07-15** (pendiente #30 ítem H, extendida acá por el Desarrollador):
+clave alfanumérica (Supabase Auth email/password), no magic link — con opción de
+identificación biométrica (Face ID/Touch ID/Windows Hello vía WebAuthn, si el dispositivo lo
+permite), igual que en la PWA de Asistentes de arriba. Diseño únicamente, sin código todavía
+(Etapa 4, depende de que la Etapa 3 esté funcionando primero). Sesión persistente.
 
 ### Mis Pacientes
 Un solo paciente → va directo a su pantalla. Varios → lista con estado actual de cada uno.

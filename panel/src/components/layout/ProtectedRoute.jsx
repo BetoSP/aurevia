@@ -4,7 +4,7 @@ import { useLocale } from '../../i18n/LocaleContext';
 import { esAdminOSuperior } from '../../lib/roles';
 
 export function ProtectedRoute({ children, soloAdmin = false, roles = null }) {
-  const { session, usuario, cargando } = useAuth();
+  const { session, usuario, cargando, mfaEstado } = useAuth();
   const { t } = useLocale();
 
   if (cargando) {
@@ -16,6 +16,12 @@ export function ProtectedRoute({ children, soloAdmin = false, roles = null }) {
   // (roles.js, requiereRolPanel.js) ya lo trataba como rol válido del Panel desde Fase 1.
   if (!session || !usuario || !['admin_prestadora', 'coordinador', 'superadmin', 'admin_plataforma'].includes(usuario.rol)) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Ítem H del pendiente #30 — con el toggle de MFA en ON, superadmin/admin_plataforma no
+  // pasa de acá hasta enrolar o verificar el segundo factor (AuthContext.evaluarMfa).
+  if (mfaEstado === 'requiere_enrolamiento' || mfaEstado === 'requiere_challenge') {
+    return <Navigate to="/mfa" replace />;
   }
 
   if (soloAdmin && !esAdminOSuperior(usuario.rol)) {

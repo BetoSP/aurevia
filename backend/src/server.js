@@ -11,6 +11,7 @@ import { panelAuditoriaRouter } from './routes/panelAuditoria.js';
 import { panelPrestadorasRouter } from './routes/panelPrestadoras.js';
 import { panelAusenciasRouter } from './routes/panelAusencias.js';
 import { panelConfiguracionRouter } from './routes/panelConfiguracion.js';
+import { panelConfiguracionPlataformaRouter } from './routes/panelConfiguracionPlataforma.js';
 import { configuracionPublicaRouter } from './routes/configuracionPublica.js';
 import { revisarVencimientos } from './utils/vencimientos.js';
 import { revisarAusenciasAutomaticas } from './utils/ausenciaAutomatica.js';
@@ -36,6 +37,7 @@ app.use('/api/panel/auditoria', panelAuditoriaRouter);
 app.use('/api/panel/prestadoras', panelPrestadorasRouter);
 app.use('/api/panel/ausencias', panelAusenciasRouter);
 app.use('/api/panel/configuracion', panelConfiguracionRouter);
+app.use('/api/panel/configuracion-plataforma', panelConfiguracionPlataformaRouter);
 app.use('/api/configuracion-publica', configuracionPublicaRouter);
 app.use('/api/whatsapp-webhook', whatsappWebhookRouter);
 

@@ -22,6 +22,18 @@ async function registrarAuditoriaMutacionExpress({ adminId, prestadoraId, metodo
   if (error) console.error('Error registrando auditoría admin_plataforma (Express):', error.message);
 }
 
+// Ítem H del pendiente #30: decodifica el claim `aal` del JWT ya validado por
+// supabase.auth.getUser() más arriba (no hace falta reverificar firma, solo leer el
+// payload) — Supabase no expone el AAL en el objeto `user`, solo en el JWT en sí.
+function leerAalDelToken(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+    return payload.aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function requiereRolPanel(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -43,6 +55,16 @@ export async function requiereRolPanel(req, res, next) {
 
   if (errorPerfil || !perfil || !['admin_prestadora', 'coordinador', 'superadmin', 'admin_plataforma'].includes(perfil.rol)) {
     return res.status(403).json({ error: 'Rol sin permiso' });
+  }
+
+  if (['superadmin', 'admin_plataforma'].includes(perfil.rol)) {
+    const { data: configPlataforma } = await supabase
+      .from('configuracion_plataforma')
+      .select('mfa_admin_obligatorio')
+      .single();
+    if (configPlataforma?.mfa_admin_obligatorio && leerAalDelToken(token) !== 'aal2') {
+      return res.status(403).json({ error: 'MFA requerido', codigo: 'mfa_requerido' });
+    }
   }
 
   let prestadoraId = perfil.prestadora_id;

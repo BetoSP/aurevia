@@ -413,7 +413,11 @@ actual:
   acordadas 2026-07-13:
   - Cuentas nominales, nunca genéricas ni compartidas entre personas — el rol es un nivel de
     permiso, no una identidad; cada persona real tiene su propia cuenta.
-  - MFA obligatorio en el login de ambos roles (radio de impacto máximo: toda la plataforma).
+  - MFA (TOTP) en el login de ambos roles (radio de impacto máximo: toda la plataforma).
+    **Revisado 2026-07-15** (ver `CLAUDE.md`, nota junto al glosario de Superadmin/
+    Admin_plataforma): decisión original de "obligatorio sin excepción" pisada por el
+    Desarrollador — pasa a ser configurable on/off, manejado únicamente por el superadmin,
+    para no sumar fricción mientras el sistema se pule y los usuarios se acostumbran.
   - El log de auditoría de 3.4.1 cubre todo login y toda acción sensible de estos dos roles,
     no solo la entrada/salida de prestadora.
 

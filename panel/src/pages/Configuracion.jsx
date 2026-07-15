@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext';
+import { useAuth } from '../context/AuthContext';
 import { useConfirmarDestructivo } from '../context/TenantSessionContext';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '../components/ui/Button';
@@ -30,7 +31,12 @@ const TIPOS_PERSONAL_EMERGENCIA = ['franquero', 'emergencia'];
 
 export function Configuracion() {
   const { t } = useLocale();
+  const { usuario } = useAuth();
   const [tab, setTab] = useState('empresa');
+
+  // Pestaña "seguridad" (toggle de MFA, ítem H del pendiente #30) solo para superadmin —
+  // ni siquiera admin_plataforma, es uno de los roles que el toggle protege.
+  const tabs = usuario?.rol === 'superadmin' ? [...TABS, 'seguridad'] : TABS;
 
   return (
     <div>
@@ -38,7 +44,7 @@ export function Configuracion() {
       <p className="panel-explicacion">{t.configuracion.explicacion}</p>
 
       <div className="panel-tabs">
-        {TABS.map((tabId) => (
+        {tabs.map((tabId) => (
           <button
             key={tabId}
             className={`panel-tab ${tab === tabId ? 'panel-tab-activo' : ''}`}
@@ -56,8 +62,72 @@ export function Configuracion() {
         {tab === 'documentos' && <TabDocumentos />}
         {tab === 'notificaciones' && <TabNotificaciones />}
         {tab === 'whatsapp' && <TabWhatsapp />}
+        {tab === 'seguridad' && usuario?.rol === 'superadmin' && <TabSeguridad />}
       </div>
     </div>
+  );
+}
+
+function TabSeguridad() {
+  const { t } = useLocale();
+  const [estado, setEstado] = useState('cargando');
+  const [error, setError] = useState(null);
+  const [mfaObligatorio, setMfaObligatorio] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  const recargar = useCallback(async () => {
+    setEstado('cargando');
+    setError(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/configuracion-plataforma/mfa`, {
+        headers: { Authorization: `Bearer ${data.session?.access_token}` },
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) throw new Error(resultado.error);
+      setMfaObligatorio(resultado.configuracion.mfa_admin_obligatorio);
+      setEstado('listo');
+    } catch (err) {
+      setError(err.message);
+      setEstado('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    recargar();
+  }, [recargar]);
+
+  async function handleToggle() {
+    setGuardando(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/configuracion-plataforma/mfa`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session?.access_token}`,
+        },
+        body: JSON.stringify({ mfa_admin_obligatorio: !mfaObligatorio }),
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) throw new Error(resultado.error);
+      setMfaObligatorio(!mfaObligatorio);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <EstadoLista estado={estado} error={error} vacio={false} recargar={recargar}>
+      <h2>{t.configuracion.seguridad_mfa_titulo}</h2>
+      <p className="panel-explicacion">{t.configuracion.seguridad_mfa_explicacion}</p>
+      <label className="panel-checkbox">
+        <input type="checkbox" checked={mfaObligatorio} onChange={handleToggle} disabled={guardando} />
+        {mfaObligatorio ? t.configuracion.seguridad_mfa_activo : t.configuracion.seguridad_mfa_inactivo}
+      </label>
+    </EstadoLista>
   );
 }
 
