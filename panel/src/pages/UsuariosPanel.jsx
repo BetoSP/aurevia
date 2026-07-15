@@ -204,7 +204,7 @@ function NuevoUsuarioPanel({ esSuperadmin, onClose, onCreado }) {
         {esSuperadmin && (
           <FormField label={t.usuarios_panel.campo_rol} name="rol" type="select" value={rol} onChange={(e) => setRol(e.target.value)}>
             <option value="coordinador">{t.usuarios_panel.rol_coordinador}</option>
-            <option value="admin_prestadora">{t.usuarios_panel.rol_admin}</option>
+            <option value="admin_prestadora">{t.usuarios_panel.rol_admin_prestadora}</option>
             <option value="superadmin">{t.usuarios_panel.rol_superadmin}</option>
           </FormField>
         )}
