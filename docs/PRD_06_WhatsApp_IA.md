@@ -5,7 +5,8 @@
 > 2026-07-13 el Desarrollador cerró los cinco puntos pendientes (A-E, ver sección de abajo) y
 > dio el kickoff de implementación el mismo día. El código (backend + Panel) se construyó,
 > se aplicó y verificó contra Supabase real, se desplegó (Railway + `vercel --prod`) y se
-> probó en navegador real contra `https://prestadora-original-panel.vercel.app`. Ver pendiente #9 de
+> probó en navegador real contra el Panel desplegado (proyecto Vercel renombrado desde
+> entonces a `aurevia-panel`). Ver pendiente #9 de
 > `docs/PENDIENTES.md` (🟢 Resuelto 2026-07-13), que tiene el detalle completo de la
 > implementación y de lo explícitamente diferido (envío real a Asistentes y endurecimiento
 > del webhook para producción, a probar con una prestadora real con cuenta Meta activa).
@@ -23,12 +24,12 @@ consultar el historial de la conversación si hace falta el detalle de precios/t
 
 1. **Integración directa con Meta Cloud API**, no con un BSP intermediario.
 2. **El número de WhatsApp Business y la cuenta de Meta deben ser de cada prestadora
-   licenciataria, nunca de PLM Systems ni de prestadora-original como plataforma central.** Dos motivos,
+   licenciataria, nunca de Xeitra como plataforma central.** Dos motivos,
    ambos explícitos del Desarrollador (2026-07-11):
    - Operativo: quien manda y recibe respuestas tiene que ser la propia prestadora, no un
      número compartido entre licenciatarias.
    - Legal: cualquier decisión tomada en esa conversación (con un suplente, un franquero, un
-     familiar) es responsabilidad exclusiva de la prestadora — **PLM Systems no debe tener
+     familiar) es responsabilidad exclusiva de la prestadora — **Xeitra no debe tener
      ninguna responsabilidad legal sobre el contenido de esas conversaciones**, consistente
      con su rol de licenciante de software, no de operador del servicio de cuidado.
    - Consecuencia técnica directa: credenciales de Meta (WABA ID, phone number ID, token de
@@ -36,7 +37,7 @@ consultar el historial de la conversación si hace falta el detalle de precios/t
      plataforma — mismo patrón multi-tenant que el resto del sistema, pero con una capa extra
      de cuidado por tratarse de credenciales de una cuenta externa de terceros con costo real
      asociado (Regla 7/8 de `CLAUDE.md` aplican con el mismo peso que a datos sensibles).
-   - **Costo del envío de mensajes lo paga la prestadora**, no PLM Systems ni prestadora-original como
+   - **Costo del envío de mensajes lo paga la prestadora**, no Xeitra como
      plataforma — cada licenciataria factura directo con Meta desde su propia cuenta.
 3. **La configuración vive dentro de la pestaña "Servicios" del Módulo 8 (Configuración),
    extendiendo la tabla/pestaña "Notificaciones" ya existente** (patrón evento → canal →

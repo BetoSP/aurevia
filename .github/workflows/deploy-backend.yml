@@ -26,4 +26,4 @@ jobs:
         working-directory: backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service prestadora-original-backend --environment production --ci
+        run: railway up --service aurevia-backend --environment production --ci
