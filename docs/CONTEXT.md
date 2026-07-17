@@ -179,7 +179,7 @@ export const T = {
 ```
 
 **Regla de slogan (resuelta 2026-07-09): no hay una forma "definitiva" — conviven dos, según
-contexto de uso**, siguiendo la guía de voz de marca (histórica, archivo interno restringido):
+contexto de uso**, siguiendo la guía de voz de marca (histórica, documento fuera del repo):
 voz institucional en primera persona del plural ("Verificamos...", "Nuestros Asistentes..."):
 
 - **"Cuida tus afectos"** (imperativo, segunda persona) — el sitio le habla directamente a
@@ -187,7 +187,7 @@ voz institucional en primera persona del plural ("Verificamos...", "Nuestros Asi
   SEO/clic. Es la forma correcta en `T.hero_title` (`sitio-web/src/i18n/translations.js`) y
   en la meta description de `/` (`docs/PRD_01_Sitio_Web.md`).
 - **"Cuidamos tus afectos"** (primera persona del plural, voz institucional) — la prestadora habla
-  de sí misma: el logo/isotipo (manual de identidad, archivo interno restringido, correcto así, no tocar),
+  de sí misma: el logo/isotipo (manual de identidad, documento histórico fuera del repo, correcto así, no tocar),
   taglines de footer, la ficha de identidad de marca. Hoy el footer del sitio
   (`sitio-web/src/components/Footer.jsx`) no tiene ningún tagline — si se agrega uno a
   futuro, esta es la forma que le corresponde.

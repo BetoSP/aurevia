@@ -1,6 +1,6 @@
 # PRD_03 — Reclutamiento (Sitio de Captación + Postulación + Verificación)
 
-> Fuente: documento original de PRD de Reclutamiento (histórico, en carpeta restringida, v1.0, Mayo 2026). Condensado para
+> Fuente: documento original de PRD de Reclutamiento (histórico, fuera del repo, v1.0, Mayo 2026). Condensado para
 > ejecución directa, con las siguientes correcciones respecto del original: (1) el original
 > menciona un nombre propio ("Alberto Sánchez") como responsable de entrevistas —
 > reemplazado por "Inversor" o "Admin_prestadora", igual que en el resto de

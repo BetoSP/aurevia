@@ -97,7 +97,7 @@ de negocio, no solo de diseño.
   lo hacen sin un sistema visual reconocible — ahí también hay espacio para diferenciarse.
 
 
-> Fuente: manual de identidad original (histórico, archivo interno restringido) + prompt maestro original Parte B.
+> Fuente: manual de identidad original (histórico, documento fuera del repo) + prompt maestro original Parte B.
 > Advertencia que hay que respetar: el manual se declara "Provisional — identidad
 > definitiva pendiente de definición". Construir el sistema de estilos de forma
 > centralizada (variables CSS, nunca hardcodeado por componente) para que un reemplazo
