@@ -1260,6 +1260,58 @@ este documento.
 
 ---
 
+### 5.9 Sitio público propio por Prestadora, con dominio propio — **idea nueva, solo inventario, sin plan aprobado**
+
+Pedido del Desarrollador (2026-07-18): cada Prestadora debería poder tener su propio sitio
+público con su propio dominio, todo gestionado desde Aurevia, "de una forma aún a
+determinar". Explícitamente autorizado **investigar y documentar, no implementar** —
+sigue el proceso del §11 de `CLAUDE.md` (inventario → plan aprobado → recién ahí código);
+este apartado es solo el primer paso.
+
+**Contexto inmediato:** el sitio público que existía hasta ahora (`sitio-web/`, proyecto
+Vercel `sitio-web`) fue dado de baja por completo el 2026-07-18 (`docs/PENDIENTES.md` #48)
+porque mostraba branding y contenido de la empresa anterior sin haberse actualizado nunca a
+Xeitra/Aurevia. Los archivos que se citan más abajo **ya no existen** en el árbol de
+archivos actual ni en el historial de git (purgados a pedido explícito del Desarrollador) —
+se los menciona solo como referencia de qué forma tenían los hallazgos estructurales
+mientras existieron, útiles si el sitio nuevo retoma la misma arquitectura de base (Next.js
++ fetch de configuración pública).
+
+**Lo que ya estaba relevado sobre ese sitio (sección 5.7 de este mismo documento), y sigue
+vigente como diagnóstico aunque el código se haya borrado:**
+- Nunca existió concepto de dominio/subdominio por tenant — `siteConfig.js` era un módulo
+  único compartido, `configuracionPublica.js` tenía fetch-con-fallback pero sin parámetro
+  de tenant en la URL, y tanto `configuracion_empresa` (backend) como su `CHECK (id = 1)`
+  (schema) asumían una sola fila para toda la plataforma.
+- `prestadoras` (Bloque 1, ya aplicado) es la entidad candidata para resolver esto, pero
+  hoy sigue sin ninguna conexión con la config pública/sitio — sección 5.7 lo marca como
+  tabla aislada de este problema específico.
+
+**Preguntas de diseño que quedan abiertas para cuando se apruebe un plan** (ninguna
+respondida todavía, ninguna acción tomada sobre esto):
+1. ¿Un solo proyecto/deploy (Next.js u otro) sirviendo contenido distinto según el dominio
+   de entrada (multi-tenant a nivel de aplicación, un solo código), o un deploy
+   independiente por Prestadora? La primera opción es la que escala a "cientos de
+   Prestadoras" sin rediseño (pregunta obligatoria del §2 de `CLAUDE.md`); la segunda no.
+2. Dominio propio de la Prestadora (ej. `www.prestadora-x.com.ar`, que la Prestadora ya
+   posea o compre) vs. subdominio de Aurevia (ej. `prestadora-x.aurevia.app`) como default
+   más simple mientras no haya dominio propio — probablemente ambas opciones coexistiendo.
+3. Verificación de propiedad y aprovisionamiento de certificado SSL cuando la Prestadora
+   trae su propio dominio — en Vercel esto es soportado (`vercel domains add` con
+   verificación DNS), pero falta decidir el flujo desde el Panel para que lo autogestione
+   la Prestadora sin intervención manual de Xeitra por cada alta.
+4. Quién administra el contenido de cada sitio (Admin_prestadora vía un CMS dentro del
+   Panel, con qué nivel de edición — solo config/textos vs. layout completo) — impacta
+   directamente el diseño de `configuracion_prestadora` (sección 3.2) y probablemente
+   necesita una tabla propia si el contenido crece más allá de config simple.
+5. Aislamiento: dos Prestadoras nunca deben poder ver ni editar el sitio de la otra —
+   mismo principio de la Regla 5.5 de `CLAUDE.md`, aplicado ahora a un dominio público en
+   lugar de datos operativos internos.
+
+**Registrado como pendiente #49 en `docs/PENDIENTES.md`** (crear el sitio real de Aurevia,
+hoy en espera intencional) y esta sección queda como el punto de partida cuando el
+Desarrollador decida avanzar con la versión por-Prestadora — no antes.
+
 ## Estado de este documento
 
 **Actualizado 2026-07-17 — ejecutado, no un plan propuesto.** Los 4 Bloques de la sección 2
