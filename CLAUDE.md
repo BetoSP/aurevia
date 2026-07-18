@@ -68,7 +68,7 @@ Esta tabla se mantiene siempre en su versión **vigente** — sin notas de fecha
 |---|---|
 | Xeitra | nombres anteriores de la empresa; "software de Xeitra" al referirse al producto |
 | Aurevia | — |
-| Prestadora | empresa cliente, organización comercial, empresa usuaria (fuera del sentido técnico del sistema) |
+| Prestadora (sinónimo aceptado: "licenciataria", cuando el contexto es específicamente la relación de licenciamiento SaaS con Xeitra) | empresa cliente, organización comercial, empresa usuaria (fuera del sentido técnico del sistema) |
 | Organización | entidad técnica multi-tenant — no confundir con "Prestadora" en texto de negocio |
 | Sandbox | empresa cliente, Prestadora real, organización comercial |
 | Asistente (cuidador/a, enfermero/a, etc.) | empleado/a, trabajador/a |
@@ -81,7 +81,7 @@ Esta tabla se mantiene siempre en su versión **vigente** — sin notas de fecha
 | Proceso de Incorporación de Asistentes | selección, filtro, pipeline, reclutamiento |
 | Certificado de Aptitud | certificado genérico, diploma, certificado propio de una Prestadora |
 | Ausente sin relevo previo | cualquier término en inglés o genérico para el caso de un Asistente que no se presenta a una Guardia cuando no había ningún otro Asistente cubriendo antes de él (ej. primera guardia del día para un Paciente) — distinto de un ausente con relevo, donde sí hay alguien saliente esperando |
-| Cumplimiento normativo (documental, por Prestadora) | compliance |
+| Documentación (vencimientos documentales de Asistentes, por Prestadora) | compliance, cumplimiento normativo |
 | Desarrollador (quien dirige el desarrollo y aprueba las decisiones elevadas) | nombre propio de esa persona como estand-in genérico; no es un rol del sistema (ver §5) |
 | multi-tenant, SaaS, RLS, MFA, Sandbox | — (términos técnicos permitidos tal cual) |
 

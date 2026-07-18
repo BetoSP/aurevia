@@ -36,7 +36,7 @@ export const T = {
       guardias: 'Guardias',
       verificacion_guardias: 'Verificación de Guardias',
       facturacion: 'Facturación a Familias',
-      compliance: 'Cumplimiento normativo',
+      documentacion: 'Documentación',
       continuidad: 'Continuidad de guardia',
       lista_precios: 'Lista de Precios',
       usuarios_panel: 'Usuarios del Panel',
@@ -554,8 +554,8 @@ export const T = {
       estado_pagada: 'Pagada',
       estado_vencida: 'Vencida',
     },
-    compliance: {
-      titulo: 'Cumplimiento normativo',
+    documentacion: {
+      titulo: 'Documentación',
       explicacion: 'Documentos de Asistentes con vencimiento (Monotributo, ART, Seguro y los que agregue la Prestadora) vencidos o próximos a vencer según el plazo de aviso configurado.',
       col_asistente: 'Asistente',
       col_documento: 'Documento',
@@ -782,7 +782,7 @@ export const T = {
       guardias: 'Shifts',
       verificacion_guardias: 'Shift verification',
       facturacion: 'Family billing',
-      compliance: 'Regulatory compliance',
+      documentacion: 'Documentation',
       continuidad: 'Shift Continuity',
       lista_precios: 'Price List',
       usuarios_panel: 'Panel Users',
@@ -1300,8 +1300,8 @@ export const T = {
       estado_pagada: 'Paid',
       estado_vencida: 'Overdue',
     },
-    compliance: {
-      titulo: 'Regulatory compliance',
+    documentacion: {
+      titulo: 'Documentation',
       explicacion: 'Assistant documents with an expiration date (Monotributo, ART, Insurance and whatever the Provider adds) that are expired or approaching expiration per the configured notice period.',
       col_asistente: 'Assistant',
       col_documento: 'Document',
@@ -1528,7 +1528,7 @@ export const T = {
       guardias: 'Plantões',
       verificacion_guardias: 'Verificação de Plantões',
       facturacion: 'Faturamento às Famílias',
-      compliance: 'Conformidade normativa',
+      documentacion: 'Documentação',
       continuidad: 'Continuidade de Plantão',
       lista_precios: 'Lista de Preços',
       usuarios_panel: 'Usuários do Painel',
@@ -2046,8 +2046,8 @@ export const T = {
       estado_pagada: 'Paga',
       estado_vencida: 'Vencida',
     },
-    compliance: {
-      titulo: 'Conformidade normativa',
+    documentacion: {
+      titulo: 'Documentação',
       explicacion: 'Documentos de Assistentes com vencimento (Monotributo, ART, Seguro e os que a Prestadora adicionar) vencidos ou próximos do vencimento conforme o prazo de aviso configurado.',
       col_asistente: 'Assistente',
       col_documento: 'Documento',

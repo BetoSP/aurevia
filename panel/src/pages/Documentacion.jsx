@@ -21,7 +21,7 @@ function estadoDocumento(fechaVencimiento, diasAviso) {
   return 'vigente';
 }
 
-export function Compliance() {
+export function Documentacion() {
   const { t } = useLocale();
   const { usuario } = useAuth();
   const [filas, setFilas] = useState([]);
@@ -79,14 +79,14 @@ export function Compliance() {
 
   return (
     <div>
-      <h1>{t.compliance.titulo}</h1>
-      <p className="panel-explicacion">{t.compliance.explicacion}</p>
+      <h1>{t.documentacion.titulo}</h1>
+      <p className="panel-explicacion">{t.documentacion.explicacion}</p>
 
       <div className="panel-filtros">
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-          <option value="vencido_o_por_vencer">{t.compliance.filtro_vencido_o_por_vencer}</option>
-          <option value="vencido">{t.compliance.estado_vencido}</option>
-          <option value="por_vencer">{t.compliance.estado_por_vencer}</option>
+          <option value="vencido_o_por_vencer">{t.documentacion.filtro_vencido_o_por_vencer}</option>
+          <option value="vencido">{t.documentacion.estado_vencido}</option>
+          <option value="por_vencer">{t.documentacion.estado_por_vencer}</option>
           <option value="todos">{t.comun.todos}</option>
         </select>
       </div>
@@ -95,10 +95,10 @@ export function Compliance() {
         <table className="panel-tabla">
           <thead>
             <tr>
-              <th>{t.compliance.col_asistente}</th>
-              <th>{t.compliance.col_documento}</th>
-              <th>{t.compliance.col_vencimiento}</th>
-              <th>{t.compliance.col_estado}</th>
+              <th>{t.documentacion.col_asistente}</th>
+              <th>{t.documentacion.col_documento}</th>
+              <th>{t.documentacion.col_vencimiento}</th>
+              <th>{t.documentacion.col_estado}</th>
             </tr>
           </thead>
           <tbody>
@@ -107,7 +107,7 @@ export function Compliance() {
                 <td>{f.asistente_nombre}</td>
                 <td>{f.tipo_nombre}</td>
                 <td>{f.fecha_vencimiento}</td>
-                <td><span className={`badge badge-${f.estado_documento}`}>{t.compliance[`estado_${f.estado_documento}`]}</span></td>
+                <td><span className={`badge badge-${f.estado_documento}`}>{t.documentacion[`estado_${f.estado_documento}`]}</span></td>
               </tr>
             ))}
           </tbody>

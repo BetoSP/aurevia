@@ -43,7 +43,7 @@ INSERT INTO catalogo_modulos (key, nombre) VALUES
   ('doc_clinica', 'Documentación clínica'),
   ('facturacion', 'Facturación y pagos'),
   ('comunicacion', 'Comunicación'),
-  ('compliance', 'Cumplimiento normativo'),
+  ('compliance', 'Documentación'),
   ('marketplace', 'Marketplace')
 ON CONFLICT (key) DO NOTHING;
 
