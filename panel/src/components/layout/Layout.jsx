@@ -84,7 +84,7 @@ export function Layout() {
           <NavLink to="/asistentes">{t.nav.asistentes}</NavLink>
           <NavLink to="/familias">{t.nav.familias}</NavLink>
           <NavLink to="/guardias">{t.nav.guardias}</NavLink>
-          <NavLink to="/verificacion-visitas">{t.nav.verificacion_visitas}</NavLink>
+          <NavLink to="/verificacion-guardias">{t.nav.verificacion_guardias}</NavLink>
           <NavLink to="/facturacion">{t.nav.facturacion}</NavLink>
           <NavLink to="/compliance">{t.nav.compliance}</NavLink>
           <NavLink to="/continuidad">{t.nav.continuidad}</NavLink>

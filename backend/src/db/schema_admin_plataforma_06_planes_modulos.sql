@@ -39,11 +39,11 @@ INSERT INTO catalogo_modulos (key, nombre) VALUES
   ('clientes', 'Gestión de familias/pacientes'),
   ('cuidadores', 'Gestión de asistentes'),
   ('programacion', 'Programación de guardias'),
-  ('evv', 'Verificación de visitas'),
+  ('evv', 'Verificación de Guardias'),
   ('doc_clinica', 'Documentación clínica'),
   ('facturacion', 'Facturación y pagos'),
   ('comunicacion', 'Comunicación'),
-  ('compliance', 'Compliance y reportes'),
+  ('compliance', 'Cumplimiento normativo'),
   ('marketplace', 'Marketplace')
 ON CONFLICT (key) DO NOTHING;
 

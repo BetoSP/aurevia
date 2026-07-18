@@ -54,7 +54,7 @@ function App() {
                     <Route path="familias" element={<Familias />} />
                     <Route path="familias/:id" element={<FamiliaDetalle />} />
                     <Route path="guardias" element={<Guardias />} />
-                    <Route path="verificacion-visitas" element={<Evv />} />
+                    <Route path="verificacion-guardias" element={<Evv />} />
                     <Route path="facturacion" element={<Facturacion />} />
                     <Route path="compliance" element={<Compliance />} />
                     <Route path="continuidad" element={<Continuidad />} />
