@@ -11,13 +11,15 @@ import { VinculoCeseTab } from './VinculoCeseTab';
 import { SimuladorVinculoTab } from './SimuladorVinculoTab';
 import { ScoreRiesgoTab } from './ScoreRiesgoTab';
 import { AusenciasCoberturaTab } from './AusenciasCoberturaTab';
+import { ComunicacionTab } from './ComunicacionTab';
 
-const TABS = ['perfil', 'verificacion', 'certificado', 'vinculo_cese', 'simulador', 'score_riesgo', 'ausencias'];
+const TABS = ['perfil', 'verificacion', 'certificado', 'vinculo_cese', 'simulador', 'score_riesgo', 'ausencias', 'comunicacion'];
 // Ausencias y Cobertura es operativo (tipo/fechas/sustituto), no datos laborales sensibles —
 // Coordinador ya tiene RLS de zona sobre "ausencias"/"guardias_cobertura" (schema_etapa2i.sql),
 // así que el tab estaba vetado en el frontend sin motivo, dejando una función habilitada en
-// el backend pero inalcanzable desde la UI.
-const TABS_COORDINADOR = ['perfil', 'verificacion', 'certificado', 'ausencias'];
+// el backend pero inalcanzable desde la UI. Comunicación es el mismo caso: RLS de zona propia
+// ya cubre a mensajes_asistente (schema_mensajes_asistente_01.sql).
+const TABS_COORDINADOR = ['perfil', 'verificacion', 'certificado', 'ausencias', 'comunicacion'];
 
 export function AsistenteDetalle() {
   const { t } = useLocale();
@@ -80,6 +82,7 @@ export function AsistenteDetalle() {
         {tab === 'simulador' && esAdmin && <SimuladorVinculoTab asistente={asistente} />}
         {tab === 'score_riesgo' && esAdmin && <ScoreRiesgoTab asistente={asistente} onActualizado={recargar} />}
         {tab === 'ausencias' && <AusenciasCoberturaTab asistente={asistente} />}
+        {tab === 'comunicacion' && <ComunicacionTab asistente={asistente} />}
       </div>
     </div>
   );

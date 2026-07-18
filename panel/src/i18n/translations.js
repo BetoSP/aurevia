@@ -295,6 +295,14 @@ export const T = {
         simulador: 'Simulador de Vínculo',
         score_riesgo: 'Score de Riesgo',
         ausencias: 'Ausencias y Cobertura',
+        comunicacion: 'Comunicación',
+      },
+      comunicacion: {
+        titulo: 'Comunicación interna',
+        explicacion: 'Historial de mensajes del equipo de la Prestadora sobre este Asistente. No es un chat con el Asistente ni con la Familia.',
+        sin_mensajes: 'Todavía no hay mensajes en este hilo.',
+        placeholder: 'Escribí un mensaje…',
+        enviar: 'Enviar',
       },
       verificacion: {
         titulo: 'Proceso de Incorporación de Asistentes',
@@ -1033,6 +1041,14 @@ export const T = {
         simulador: 'Employment Simulator',
         score_riesgo: 'Risk Score',
         ausencias: 'Absences & Coverage',
+        comunicacion: 'Communication',
+      },
+      comunicacion: {
+        titulo: 'Internal communication',
+        explicacion: 'History of messages from the Provider’s team about this Assistant. Not a chat with the Assistant or the Family.',
+        sin_mensajes: 'No messages in this thread yet.',
+        placeholder: 'Write a message…',
+        enviar: 'Send',
       },
       verificacion: {
         titulo: 'Onboarding Process',
@@ -1771,6 +1787,14 @@ export const T = {
         simulador: 'Simulador de Vínculo',
         score_riesgo: 'Score de Risco',
         ausencias: 'Ausências e Cobertura',
+        comunicacion: 'Comunicação',
+      },
+      comunicacion: {
+        titulo: 'Comunicação interna',
+        explicacion: 'Histórico de mensagens da equipe da Prestadora sobre este Assistente. Não é um chat com o Assistente nem com a Família.',
+        sin_mensajes: 'Ainda não há mensagens neste histórico.',
+        placeholder: 'Escreva uma mensagem…',
+        enviar: 'Enviar',
       },
       verificacion: {
         titulo: 'Processo de Incorporação de Assistentes',
