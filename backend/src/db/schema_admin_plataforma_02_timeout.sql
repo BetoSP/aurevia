@@ -26,4 +26,9 @@ AS $$
   )
 $$;
 
+-- Pendiente #52 (docs/PENDIENTES.md): Supabase otorga EXECUTE a PUBLIC (heredado por
+-- anon/authenticated) por defecto a toda función nueva del schema public — revocado
+-- explícito, uso exclusivo interno vía RLS/triggers, sin caso de uso legítimo por RPC.
+REVOKE EXECUTE ON FUNCTION current_tenant() FROM PUBLIC;
+
 NOTIFY pgrst, 'reload schema';

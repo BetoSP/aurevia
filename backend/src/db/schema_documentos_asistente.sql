@@ -149,6 +149,8 @@ ALTER TABLE asistentes DROP COLUMN IF EXISTS vencimiento_seguro;
 -- 6. Trigger de bloqueo de columnas laborales (schema_etapa2j.sql) — se reescribe sin las 3
 --    columnas eliminadas; el resto de la protección queda igual.
 -- ============================================================================
+-- SET search_path fijo (2026-07-18): sin esto, un caller SECURITY DEFINER podría
+-- manipular el search_path de su sesión para resolver "usuarios" contra un schema propio.
 CREATE OR REPLACE FUNCTION bloquear_edicion_laboral_coordinador()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -173,7 +175,12 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Pendiente #52 (docs/PENDIENTES.md): revocado EXECUTE de PUBLIC (heredado por
+-- anon/authenticated) — es un trigger, uso exclusivo interno, sin caso de uso legítimo
+-- por RPC directo.
+REVOKE EXECUTE ON FUNCTION bloquear_edicion_laboral_coordinador() FROM PUBLIC;
 
 -- ============================================================================
 -- 7. configuracion_notificaciones — los 3 eventos fijos por documento se reemplazan por uno

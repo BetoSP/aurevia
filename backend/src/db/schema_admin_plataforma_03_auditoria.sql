@@ -145,4 +145,10 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Pendiente #52 (docs/PENDIENTES.md): revocado EXECUTE de PUBLIC (heredado por
+-- anon/authenticated) en las 2 funciones de esta sección — uso exclusivo interno vía
+-- triggers/RLS, sin caso de uso legítimo por RPC directo.
+REVOKE EXECUTE ON FUNCTION es_sesion_tenant_admin_plataforma_activa() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION fn_auditoria_admin_plataforma_mutacion() FROM PUBLIC;
+
 NOTIFY pgrst, 'reload schema';

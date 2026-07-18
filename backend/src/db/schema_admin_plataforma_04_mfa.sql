@@ -61,4 +61,8 @@ BEGIN
 END;
 $$;
 
+-- Pendiente #52 (docs/PENDIENTES.md): revocado EXECUTE de PUBLIC (heredado por
+-- anon/authenticated) — uso exclusivo interno vía RLS, sin caso de uso legítimo por RPC.
+REVOKE EXECUTE ON FUNCTION es_superadmin() FROM PUBLIC;
+
 NOTIFY pgrst, 'reload schema';

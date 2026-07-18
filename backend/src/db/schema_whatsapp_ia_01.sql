@@ -125,6 +125,11 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION guardar_token_whatsapp(UUID, TEXT) FROM PUBLIC;
+-- Supabase otorga EXECUTE a anon/authenticated por defecto en funciones nuevas del
+-- schema public; el REVOKE ALL FROM PUBLIC de arriba no alcanza a revocar esos grants
+-- directos (bug real encontrado y corregido 2026-07-18: permitía leer/pisar el token de
+-- WhatsApp de cualquier prestadora vía RPC directo de PostgREST, sin pasar por RLS).
+REVOKE EXECUTE ON FUNCTION guardar_token_whatsapp(UUID, TEXT) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION guardar_token_whatsapp(UUID, TEXT) TO service_role;
 
 CREATE OR REPLACE FUNCTION leer_token_whatsapp(p_prestadora_id UUID)
@@ -151,6 +156,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION leer_token_whatsapp(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION leer_token_whatsapp(UUID) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION leer_token_whatsapp(UUID) TO service_role;
 
 -- ============================================================================

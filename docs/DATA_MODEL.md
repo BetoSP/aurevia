@@ -84,23 +84,108 @@ todo insert nuevo debe declarar `prestadora_id` explícito. `guardias`/`series_g
 ## Tabla: usuarios
 
 Extiende `auth.users` de Supabase. `prestadora_id` es `NOT NULL` desde el Bloque 1
-(`schema_multitenant_01.sql`) — ver deuda del `DEFAULT` arriba.
+(`schema_multitenant_01.sql`) — ver deuda del `DEFAULT` arriba — **salvo para
+`admin_plataforma`**, único rol que puede tener `prestadora_id NULL` (constraint
+`usuarios_prestadora_id_solo_admin_plataforma_null`, ver más abajo).
 
 ```sql
 CREATE TABLE usuarios (
   id UUID REFERENCES auth.users PRIMARY KEY,
-  rol TEXT CHECK (rol IN ('superadmin','admin_prestadora','coordinador','asistente','familia')),
-  prestadora_id UUID NOT NULL REFERENCES prestadoras(id),
+  rol TEXT CHECK (rol IN ('superadmin','admin_prestadora','coordinador','asistente','familia','admin_plataforma')),
+  prestadora_id UUID REFERENCES prestadoras(id),
   nombre TEXT,
   telefono TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_prestadora_id_solo_admin_plataforma_null
+  CHECK (prestadora_id IS NOT NULL OR rol = 'admin_plataforma');
 ```
 
 Nota (2026-07-10): el rol `admin` original fue renombrado a `admin_prestadora` en dato y
 código durante el Bloque 2 — no queda ningún registro ni ruta con el valor `admin` anterior
-(ver `CLAUDE.md` glosario). `superadmin` no tiene un `prestadora_id` que lo limite (ve todas
-las prestadoras vía `es_superadmin()`, ver `SECURITY.md`).
+(ver `CLAUDE.md` glosario).
+
+**Corrección (2026-07-18, documentación desactualizada detectada en auditoría):** la nota
+anterior de esta sección decía que `superadmin` "ve todas las prestadoras vía
+`es_superadmin()`" — eso ya no es así desde el pendiente #30 (rediseño de roles, resuelto
+2026-07-15). Hoy `superadmin` tiene `prestadora_id` fijo apuntando a la Organización
+**Sandbox** exclusivamente (Regla dura de `CLAUDE.md` §5: "Superadmin tiene acceso de Panel
+únicamente a la Organización Sandbox"). `es_superadmin()` ya no es un bypass total de RLS:
+las policies que la usan siguen el patrón `(es_superadmin() AND prestadora_id =
+current_tenant()) OR (...)`, y `current_tenant()` para `superadmin` resuelve siempre a su
+propio `prestadora_id` (Sandbox) porque solo `admin_plataforma` puede abrir una sesión de
+tenant (`requiereAdminPlataforma`, `backend/src/routes/panelSesionTenant.js`). Ver sección
+siguiente para el mecanismo completo.
+
+## Roles `superadmin` / `admin_plataforma` y "modo dentro de una prestadora" (pendiente #30,
+## resuelto 2026-07-15 — diseño original en `docs/PLAN_MULTITENANT_XEITRA.md` 3.4/3.4.1)
+
+Modelo de 3 niveles: `admin_prestadora` (acotado a su propia `prestadora_id`, sin cambios),
+`superadmin` (rol técnico puro, único acceso permitido: la Organización Sandbox, nunca una
+Prestadora real), `admin_plataforma` (rol técnico-administrativo de Xeitra, `prestadora_id
+NULL` en su fila de `usuarios`, sin acceso a ninguna Prestadora salvo que abra
+explícitamente una sesión de "modo dentro de una prestadora", una por vez).
+
+```sql
+CREATE TABLE sesiones_tenant_admin_plataforma (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID NOT NULL REFERENCES usuarios(id),
+  prestadora_id UUID NOT NULL REFERENCES prestadoras(id),
+  entrada_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ultima_actividad_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expira_at TIMESTAMPTZ NOT NULL,
+  salida_at TIMESTAMPTZ
+);
+
+CREATE TABLE auditoria_admin_plataforma (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID NOT NULL REFERENCES usuarios(id),
+  prestadora_id UUID REFERENCES prestadoras(id),
+  tipo_evento TEXT NOT NULL,
+  tabla_afectada TEXT,
+  operacion TEXT,
+  registro_id UUID,
+  detalle JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+`current_tenant()` (función Postgres) resuelve, en orden: (1) si hay una sesión vigente en
+`sesiones_tenant_admin_plataforma` para el `admin_plataforma` actual con `ultima_actividad_at
+> NOW() - 5 min` (timeout de inactividad), esa `prestadora_id`; (2) si no, el
+`usuarios.prestadora_id` propio (caso `admin_prestadora`/`superadmin`/etc). El tope absoluto
+de sesión (60 min, con aviso a los 50) y el resto de las reglas de UI (banner visible,
+advertencia extra antes de operaciones destructivas) están implementados en
+`panel/src/context/TenantSessionContext.jsx` y `backend/src/routes/panelSesionTenant.js`
+(`requiereAdminPlataforma`, único que puede crear/cerrar una fila de
+`sesiones_tenant_admin_plataforma`). RLS habilitada en ambas tablas.
+
+## Tablas: advertencias_legales / auditoria_advertencias_legales (pendiente #51, infraestructura
+## resuelta 2026-07-18 — integración con un toggle real todavía pendiente)
+
+Infraestructura genérica para el mecanismo de advertencias legales de `CLAUDE.md` §3: el
+software no bloquea ninguna función de gestión de Asistentes por motivos legales, solo
+advierte cuando hay un riesgo conocido en la jurisdicción de la Prestadora.
+
+- `advertencias_legales` — contenido curado por Xeitra (`superadmin`), una fila por
+  `(jurisdiccion, funcion_clave)`. `jurisdiccion` usa el mismo código que `prestadoras.pais`
+  (ISO 3166-1 alpha-2). El texto humano-legible fuente vive en `docs/legal/<país>.md`. Sin
+  fila para una jurisdicción/función = no se muestra advertencia (comportamiento correcto,
+  no un bug). Hoy solo Argentina (`AR`) tiene las 7 filas reales, migradas desde
+  `docs/legal/argentina.md`; el resto de `docs/legal/*.md` son placeholders sin investigar.
+- `auditoria_advertencias_legales` — snapshot (no referencia viva) de qué texto se le mostró
+  a qué usuario, sobre qué Prestadora, para qué función, y cuándo. RLS: `admin_prestadora`
+  ve solo la de su propia Prestadora, `superadmin` ve todo; inserción acotada a
+  `current_tenant()` y al propio `usuario_id`.
+
+**Sin consumidor real todavía**: ninguna función de gestión de Asistentes (rankings,
+penalización de inasistencias, puntuaciones, niveles/categorías, horarios fijos) existe hoy
+como toggle en el producto. El hook `panel/src/context/AdvertenciaLegalContext.jsx`
+(`useAdvertenciaLegal().verificarAntesDeActivar(prestadoraId, funcionClave)`) está listo para
+que el primer toggle real lo use, pero no se pudo probar de punta a punta con un caso vivo —
+solo se verificaron las policies directo contra Supabase real. Ver pendiente #51 en
+`docs/PENDIENTES.md` para el detalle completo.
 
 ## Tabla: asistentes
 
