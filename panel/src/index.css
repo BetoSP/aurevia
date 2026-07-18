@@ -440,6 +440,21 @@ h2 {
   color: var(--texto-secundario);
 }
 
+.badge-vigente {
+  background: rgba(40, 167, 69, 0.12);
+  color: #1E7B34;
+}
+
+.badge-por_vencer {
+  background: rgba(253, 126, 20, 0.12);
+  color: #B35A0E;
+}
+
+.badge-vencido {
+  background: rgba(220, 53, 69, 0.12);
+  color: #A82735;
+}
+
 /* ---------- Panel Admin_plataforma: KPIs ---------- */
 
 .panel-kpis {
