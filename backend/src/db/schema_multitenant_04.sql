@@ -35,19 +35,24 @@ ON CONFLICT (prestadora_id) DO NOTHING;
 
 ALTER TABLE configuracion_prestadora ENABLE ROW LEVEL SECURITY;
 
+-- `prestadora_id = current_tenant()` va FUERA del OR con es_superadmin(): un
+-- superadmin solo tiene current_tenant() = Sandbox (CLAUDE.md §5, restricción
+-- dura), nunca puede leer/editar la configuración de una Prestadora real.
 CREATE POLICY "prestadora_lee_su_configuracion" ON configuracion_prestadora
   FOR SELECT USING (
-    es_superadmin() OR (
-      prestadora_id = current_tenant()
-      AND EXISTS (SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin_prestadora')
+    prestadora_id = current_tenant()
+    AND (
+      es_superadmin()
+      OR EXISTS (SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin_prestadora')
     )
   );
 
 CREATE POLICY "prestadora_edita_su_configuracion" ON configuracion_prestadora
   FOR UPDATE USING (
-    es_superadmin() OR (
-      prestadora_id = current_tenant()
-      AND EXISTS (SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin_prestadora')
+    prestadora_id = current_tenant()
+    AND (
+      es_superadmin()
+      OR EXISTS (SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin_prestadora')
     )
   );
 
