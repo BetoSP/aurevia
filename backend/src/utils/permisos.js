@@ -5,7 +5,7 @@ import { supabase } from '../db/connection.js';
 // (backend/src/db/schema_permisos_prestadora_01.sql). Se duplica acá porque el alta manual
 // corre en Express con la service role key, sin auth.uid(), así que la función SQL
 // (pensada para RLS) no aplica en este contexto.
-const ACCIONES_DEFAULT_SOLO_ADMIN = new Set(['alta_manual_asistente', 'alta_manual_familia']);
+const ACCIONES_DEFAULT_SOLO_ADMIN = new Set(['alta_manual_asistente', 'alta_manual_familia', 'importar_datos_masivos']);
 
 export const ACCIONES_PERMISOS = [
   'alta_manual_asistente',
@@ -13,6 +13,7 @@ export const ACCIONES_PERMISOS = [
   'editar_identidad_asistente',
   'editar_datos_familia',
   'editar_datos_paciente',
+  'importar_datos_masivos',
 ];
 
 export async function tienePermiso({ accion, rol, usuarioId, prestadoraId }) {

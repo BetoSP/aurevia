@@ -407,7 +407,7 @@ panelConfiguracionRouter.patch('/documentos-tipo/:id', async (req, res) => {
 //     permisos + importación masiva) — quién, además de un Admin, puede dar de alta a mano
 //     o editar datos de Asistentes/Familias/Pacientes. Ver backend/src/utils/permisos.js y
 //     backend/src/db/schema_permisos_prestadora_01.sql. ---
-const ACCIONES_DEFAULT_SOLO_ADMIN = new Set(['alta_manual_asistente', 'alta_manual_familia']);
+const ACCIONES_DEFAULT_SOLO_ADMIN = new Set(['alta_manual_asistente', 'alta_manual_familia', 'importar_datos_masivos']);
 
 panelConfiguracionRouter.get('/permisos', async (req, res) => {
   const prestadoraId = req.usuarioPanel.prestadoraId;

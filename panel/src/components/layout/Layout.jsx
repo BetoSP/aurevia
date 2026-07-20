@@ -4,6 +4,7 @@ import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { useEmpresa } from '../../context/EmpresaContext';
 import { useTenantSession } from '../../context/TenantSessionContext';
+import { usePermisos } from '../../context/PermisosContext';
 import { esAdminOSuperior } from '../../lib/roles';
 import { LOCALES } from '../../i18n/translations';
 
@@ -70,6 +71,7 @@ export function Layout() {
   const { t, locale, setLocale } = useLocale();
   const { usuario, logout } = useAuth();
   const { empresa } = useEmpresa();
+  const { puede } = usePermisos();
 
   return (
     <div className="panel-layout">
@@ -90,6 +92,9 @@ export function Layout() {
           <NavLink to="/documentacion">{t.nav.documentacion}</NavLink>
           <NavLink to="/continuidad">{t.nav.continuidad}</NavLink>
           <NavLink to="/lista-precios">{t.nav.lista_precios}</NavLink>
+          {(esAdminOSuperior(usuario?.rol) || puede('importar_datos_masivos')) && (
+            <NavLink to="/importacion">{t.nav.importacion}</NavLink>
+          )}
           {esAdminOSuperior(usuario?.rol) && <NavLink to="/usuarios-panel">{t.nav.usuarios_panel}</NavLink>}
           {['admin_plataforma', 'superadmin'].includes(usuario?.rol) && <NavLink to="/prestadoras">{t.nav.prestadoras}</NavLink>}
           {usuario?.rol === 'admin_plataforma' && <NavLink to="/admin-plataforma">{t.nav.admin_plataforma}</NavLink>}
