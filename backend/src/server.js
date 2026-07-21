@@ -19,6 +19,7 @@ import { revisarVencimientos } from './utils/vencimientos.js';
 import { revisarAusenciasAutomaticas } from './utils/ausenciaAutomatica.js';
 import { revisarNotificacionesCoordinador } from './utils/revisarNotificacionesCoordinador.js';
 import { extenderSeriesGuardiaAbiertas } from './utils/generacionSeriesGuardia.js';
+import { revisarRecordatoriosPush } from './utils/revisarRecordatoriosPush.js';
 import { whatsappWebhookRouter } from './routes/whatsappWebhook.js';
 import { appAsistentesRouter } from './routes/appAsistentes.js';
 
@@ -74,6 +75,13 @@ extenderSeriesGuardiaAbiertas().catch((err) => console.error('Error en extensió
 setInterval(() => {
   extenderSeriesGuardiaAbiertas().catch((err) => console.error('Error en extensión de series de guardia:', err.message));
 }, UN_DIA_MS);
+
+// Push a Asistentes (nueva guardia asignada, mensajes del coordinador, recordatorios) —
+// docs/PRD_04_05_App_Servicio.md:115. Misma cadencia que revisarAusenciasAutomaticas.
+revisarRecordatoriosPush().catch((err) => console.error('Error en revisión inicial de recordatorios push:', err.message));
+setInterval(() => {
+  revisarRecordatoriosPush().catch((err) => console.error('Error en revisión de recordatorios push:', err.message));
+}, CINCO_MINUTOS_MS);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

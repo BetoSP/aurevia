@@ -8,6 +8,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      // injectManifest (no generateSW): el service worker necesita manejar el evento 'push'
+      // (notificaciones push a Asistentes) además del precache del shell de la app.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       manifest: {
         name: 'Aurevia — Asistentes',
         short_name: 'Aurevia',
@@ -20,10 +25,10 @@ export default defineConfig({
         // pantalla de inicio — por ahora solo el favicon SVG heredado del Panel.
         icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }],
       },
-      workbox: {
+      injectManifest: {
         // Nunca cachear llamadas a la API (datos de guardias/reportes cambian todo el
         // tiempo y son sensibles) — el precache es solo para el shell de la app.
-        navigateFallbackDenylist: [/^\/api\//],
+        globPatterns: ['**/*.{js,css,html,svg}'],
       },
     }),
   ],

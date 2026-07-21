@@ -289,3 +289,51 @@ appAsistentesRouter.get('/pacientes/:id/reportes', requiereRolAsistente, async (
   }
   res.json({ reportes: data });
 });
+
+// ============================================================================
+// Notificaciones push (Web Push API + VAPID)
+// ============================================================================
+
+appAsistentesRouter.post('/push/suscribir', requiereRolAsistente, async (req, res) => {
+  const { endpoint, keys } = req.body || {};
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    return res.status(400).json({ error: 'Suscripción push incompleta' });
+  }
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert(
+      {
+        prestadora_id: req.usuarioAsistente.prestadoraId,
+        asistente_id: req.usuarioAsistente.id,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        user_agent: req.headers['user-agent'] || null,
+      },
+      { onConflict: 'endpoint' }
+    );
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ ok: true });
+});
+
+appAsistentesRouter.delete('/push/suscribir', requiereRolAsistente, async (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) {
+    return res.status(400).json({ error: 'Falta el endpoint de la suscripción' });
+  }
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('endpoint', endpoint)
+    .eq('asistente_id', req.usuarioAsistente.id);
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ ok: true });
+});

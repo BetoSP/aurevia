@@ -38,4 +38,6 @@ export const api = {
   },
   confirmarReporte: (id, datos) => pedido(`/guardias/${id}/reporte/confirmar`, { method: 'POST', body: JSON.stringify(datos) }),
   reportesDelPaciente: (pacienteId) => pedido(`/pacientes/${pacienteId}/reportes`),
+  suscribirPush: (suscripcion) => pedido('/push/suscribir', { method: 'POST', body: JSON.stringify(suscripcion) }),
+  desuscribirPush: (endpoint) => pedido('/push/suscribir', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
 };
