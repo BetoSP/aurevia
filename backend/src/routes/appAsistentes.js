@@ -3,6 +3,8 @@ import multer from 'multer';
 import { requiereRolAsistente } from '../middleware/requiereRolAsistente.js';
 import { supabase } from '../db/connection.js';
 import { estructurarReporteIA, distanciaMetros } from '../utils/reporteIA.js';
+import { enviarPushFamilia } from '../utils/push.js';
+import { analizarPaciente } from '../utils/revisarAlertasIA.js';
 
 export const appAsistentesRouter = Router();
 
@@ -116,7 +118,7 @@ appAsistentesRouter.post('/guardias/:id/checkin', requiereRolAsistente, async (r
 
   const { data: paciente } = await supabase
     .from('pacientes')
-    .select('lat, lng')
+    .select('lat, lng, familia_id, nombre')
     .eq('id', guardia.paciente_id)
     .maybeSingle();
 
@@ -140,6 +142,18 @@ appAsistentesRouter.post('/guardias/:id/checkin', requiereRolAsistente, async (r
     .eq('id', guardia.id);
   if (error) {
     return res.status(500).json({ error: error.message });
+  }
+
+  if (paciente?.familia_id) {
+    // Push inmediato a la Familia — docs/PRD_04_05_App_Servicio.md:58 ("el Asistente llegó
+    // al domicilio"). Se envía una sola vez porque checkin_at ya se validó arriba como no
+    // seteado antes de este UPDATE.
+    enviarPushFamilia(paciente.familia_id, {
+      titulo: 'Tu Asistente llegó',
+      cuerpo: `El Asistente llegó al domicilio de ${paciente.nombre}.`,
+      url: `/pacientes/${guardia.paciente_id}`,
+    }).catch((err) => console.error('Error enviando push de llegada a Familia:', err.message));
+    await supabase.from('guardias').update({ push_llegada_enviado_at: new Date().toISOString() }).eq('id', guardia.id);
   }
 
   if (!dentroDeRango && req.usuarioAsistente.prestadoraId) {
@@ -255,13 +269,78 @@ appAsistentesRouter.post('/guardias/:id/reporte/confirmar', requiereRolAsistente
 
   const { error: errorGuardia } = await supabase
     .from('guardias')
-    .update({ checkout_at: new Date().toISOString(), checkout_lat: lat, checkout_lng: lng, estado: 'completada' })
+    .update({
+      checkout_at: new Date().toISOString(),
+      checkout_lat: lat,
+      checkout_lng: lng,
+      estado: 'completada',
+      push_reporte_enviado_at: new Date().toISOString(),
+    })
     .eq('id', guardia.id);
   if (errorGuardia) {
     return res.status(500).json({ error: errorGuardia.message });
   }
 
+  const { data: paciente } = await supabase
+    .from('pacientes')
+    .select('familia_id, nombre')
+    .eq('id', guardia.paciente_id)
+    .maybeSingle();
+  if (paciente?.familia_id) {
+    enviarPushFamilia(paciente.familia_id, {
+      titulo: 'Reporte diario disponible',
+      cuerpo: `Ya está listo el reporte de la guardia de ${paciente.nombre}.`,
+      url: `/pacientes/${guardia.paciente_id}/reportes/${reporte.id}`,
+    }).catch((err) => console.error('Error enviando push de reporte a Familia:', err.message));
+  }
+
+  // IA Nivel 2 — análisis inmediato si el texto libre contiene una palabra clave crítica
+  // configurada por la Prestadora (docs/AI_PROMPTS.md:43-45 — nunca hardcodeada). Sin fila
+  // configurada, no se dispara nada acá; el análisis nocturno sigue corriendo igual.
+  if (textoLibre) {
+    supabase
+      .from('configuracion_alertas_ia')
+      .select('palabras_clave')
+      .eq('prestadora_id', guardia.prestadora_id)
+      .maybeSingle()
+      .then(({ data: config }) => {
+        const palabrasClave = config?.palabras_clave || [];
+        const textoNormalizado = textoLibre.toLowerCase();
+        const contieneCritica = palabrasClave.some((palabra) => textoNormalizado.includes(String(palabra).toLowerCase()));
+        if (contieneCritica) {
+          analizarPaciente(guardia.paciente_id, guardia.prestadora_id).catch((err) =>
+            console.error('Error en análisis inmediato de IA Nivel 2:', err.message)
+          );
+        }
+      });
+  }
+
   res.json({ ok: true, reporteId: reporte.id });
+});
+
+// Ping de ubicación en vivo durante una guardia activa — la Familia lo lee vía Supabase
+// Realtime, nunca por HTTP (PRD_04_05_App_Servicio.md, mapa en tiempo real de la Pantalla
+// del Paciente).
+appAsistentesRouter.patch('/guardias/:id/ubicacion', requiereRolAsistente, async (req, res) => {
+  const { lat, lng } = req.body || {};
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    return res.status(400).json({ error: 'Faltan coordenadas GPS' });
+  }
+
+  const guardia = await guardiaDelAsistente(req.params.id, req.usuarioAsistente);
+  if (!guardia || guardia.estado !== 'activa') {
+    return res.status(404).json({ error: 'Guardia activa no encontrada' });
+  }
+
+  const { error } = await supabase
+    .from('guardias')
+    .update({ ubicacion_actual_lat: lat, ubicacion_actual_lng: lng, ubicacion_actual_at: new Date().toISOString() })
+    .eq('id', guardia.id);
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ ok: true });
 });
 
 // Reportes anteriores del mismo Paciente (botón "Ver reportes anteriores" en Guardia Activa).

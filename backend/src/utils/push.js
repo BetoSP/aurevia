@@ -13,10 +13,12 @@ function asegurarConfiguracion() {
   return true;
 }
 
-// Envía un push a todas las suscripciones activas del Asistente. Si una suscripción devuelve
-// 404/410 (dispositivo desinstaló la app o revocó el permiso), se borra en el momento — mismo
-// criterio que el resto del proyecto de no dejar basura de estado que ya no es válido.
-export async function enviarPushAsistente(asistenteId, { titulo, cuerpo, url }) {
+// Envía un push a todas las suscripciones activas de una audiencia (Asistente o Familia,
+// nunca ambas — ver CHECK push_subscriptions_una_audiencia en schema_pwa_familias_01.sql).
+// Si una suscripción devuelve 404/410 (dispositivo desinstaló la app o revocó el permiso),
+// se borra en el momento — mismo criterio que el resto del proyecto de no dejar basura de
+// estado que ya no es válido.
+async function enviarPush(columna, id, { titulo, cuerpo, url }) {
   if (!asegurarConfiguracion()) {
     console.error('Push no configurado: falta VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY');
     return;
@@ -25,7 +27,7 @@ export async function enviarPushAsistente(asistenteId, { titulo, cuerpo, url }) 
   const { data: suscripciones, error } = await supabase
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
-    .eq('asistente_id', asistenteId);
+    .eq(columna, id);
 
   if (error || !suscripciones?.length) return;
 
@@ -50,4 +52,12 @@ export async function enviarPushAsistente(asistenteId, { titulo, cuerpo, url }) 
       }
     }),
   );
+}
+
+export function enviarPushAsistente(asistenteId, datos) {
+  return enviarPush('asistente_id', asistenteId, datos);
+}
+
+export function enviarPushFamilia(familiaId, datos) {
+  return enviarPush('familia_id', familiaId, datos);
 }

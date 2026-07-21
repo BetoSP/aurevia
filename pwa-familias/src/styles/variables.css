@@ -1,0 +1,15 @@
+:root {
+  --azul-oscuro: oklch(0.22 0.02 250);
+  --azul-medio: oklch(0.65 0.13 250);
+  --verde-exito: oklch(0.55 0.13 165);
+  --naranja-alerta: oklch(0.62 0.13 70);
+  --rojo-peligro: oklch(0.58 0.15 25);
+  --rojo-peligro-bg: oklch(0.92 0.05 25);
+  --fondo-alt: oklch(0.98 0.004 250);
+  --texto-principal: oklch(0.2 0.01 250);
+  --texto-secundario: oklch(0.5 0.01 250);
+  --borde-card: oklch(0.9 0.005 250);
+
+  --font-display: 'Public Sans', sans-serif;
+  --font-body: 'Public Sans', sans-serif;
+}

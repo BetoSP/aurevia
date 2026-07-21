@@ -22,6 +22,8 @@ import { extenderSeriesGuardiaAbiertas } from './utils/generacionSeriesGuardia.j
 import { revisarRecordatoriosPush } from './utils/revisarRecordatoriosPush.js';
 import { whatsappWebhookRouter } from './routes/whatsappWebhook.js';
 import { appAsistentesRouter } from './routes/appAsistentes.js';
+import { appFamiliasRouter } from './routes/appFamilias.js';
+import { revisarAlertasIA } from './utils/revisarAlertasIA.js';
 
 const app = express();
 app.use(cors());
@@ -47,6 +49,7 @@ app.use('/api/panel/configuracion-plataforma', panelConfiguracionPlataformaRoute
 app.use('/api/configuracion-publica', configuracionPublicaRouter);
 app.use('/api/whatsapp-webhook', whatsappWebhookRouter);
 app.use('/api/app-asistentes', appAsistentesRouter);
+app.use('/api/app-familias', appFamiliasRouter);
 
 const UN_DIA_MS = 24 * 60 * 60 * 1000;
 revisarVencimientos().catch((err) => console.error('Error en revisión inicial de vencimientos:', err.message));
@@ -82,6 +85,14 @@ revisarRecordatoriosPush().catch((err) => console.error('Error en revisión inic
 setInterval(() => {
   revisarRecordatoriosPush().catch((err) => console.error('Error en revisión de recordatorios push:', err.message));
 }, CINCO_MINUTOS_MS);
+
+// IA Nivel 2 (Alertas por patrones) — job nocturno, docs/AI_PROMPTS.md:43. Misma cadencia
+// que revisarVencimientos (se mide en días, no minutos); el disparo inmediato por palabra
+// clave crítica corre aparte, en el momento de confirmar el reporte (appAsistentes.js).
+revisarAlertasIA().catch((err) => console.error('Error en revisión inicial de alertas IA Nivel 2:', err.message));
+setInterval(() => {
+  revisarAlertasIA().catch((err) => console.error('Error en revisión de alertas IA Nivel 2:', err.message));
+}, UN_DIA_MS);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
