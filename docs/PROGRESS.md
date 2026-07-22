@@ -22,15 +22,16 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 ## Última tarea completada
 
 **2026-07-22: Fase 6 del plan de rediseño de frontend — Estado de Hospitalización y
-causales de Cese de servicio, código construido, schema aplicado contra Supabase real y
-verificado en navegador real contra Sandbox/Demo** (ver fila 2026-07-22 de "Archivos
+causales de Cese de servicio, construida, verificada en navegador real contra Sandbox/Demo,
+commiteada, pusheada y desplegada a producción** (ver fila 2026-07-22 de "Archivos
 creados/modificados por sesión" más abajo y pendiente #78 de `docs/PENDIENTES.md` para el
 detalle completo). Verificado en navegador: alta/cierre reversible de Hospitalización,
 alerta de contingencia por convivencia (generación y resolución), y `TabAvisoCese` en
 Configuración → Notificaciones — todo sin errores de consola; datos de prueba ya
-eliminados de Supabase real. Sin verificar en navegador: el disparo automático del aviso
-de Cese tras vencer el plazo (cron ya construido, sin evidencia de ejecución real). Sin
-commit/push/deploy — a confirmar con el Desarrollador antes de ejecutarse.
+eliminados de Supabase real. Commit `8b770ed` en `origin/main`; Panel desplegado a
+`https://aurevia-panel.vercel.app`. Sin verificar en navegador: el disparo automático del
+aviso de Cese tras vencer el plazo (cron ya construido, sin evidencia de ejecución real) —
+queda anotado en pendiente #78.
 
 **2026-07-22: Fase 4 del plan de rediseño de frontend — Accesibilidad base (WCAG 2.1/2.2
 AA) completa** (contraste de la paleta oklch, targets táctiles ≥44×44px, alternativa de
