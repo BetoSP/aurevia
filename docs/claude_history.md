@@ -2,6 +2,13 @@
 
 > Registra por qué cambió una regla vigente de `CLAUDE.md`. La regla vigente en sí vive solo en `CLAUDE.md` (§10) — este archivo guarda el "antes" y el motivo, no vuelve a describir el estado actual en detalle.
 
+## Regla 12 agregada: "Ningún patrón de lógica repetido sin punto único de verdad" (2026-07-22)
+
+- **Antes:** `CLAUDE.md` §7 tenía 11 reglas no negociables de desarrollo; no existía ninguna regla general sobre duplicación de lógica de negocio entre distintos puntos del código.
+- **Ahora:** se agregó la Regla 12 — toda decisión de negocio (regla de acceso, validación, cálculo, mapeo de estado/color, criterio de permisos, etc.) que aparezca en más de un lugar debe consumir una única función/constante/vista, nunca la misma condición copiada archivo por archivo; cuando la plataforma no permite compartir código directamente (ej. políticas RLS de Postgres), el punto único de verdad es una función SQL reutilizada por todas las políticas. También exige buscar primero (grep/lectura real) antes de asumir que un patrón no existe ya en el proyecto.
+- **Motivo:** durante el relevamiento de la Fase 5 (círculo de cuidado, PWA Familias) se encontraron 13 políticas RLS en 5 archivos de schema distintos, todas repitiendo a mano la misma condición `familia_id = auth.uid()`, sin ninguna función central. El Desarrollador señaló el riesgo de contradicciones y dificultad de mantenimiento que eso implica. Se propuso primero limitarlo a una nota de convención en `docs/DATA_MODEL.md` (solo RLS/família), pero el Desarrollador pidió explícitamente generalizarlo a todo el proyecto: "yo no limitaria la norma a rls y familia, lo haria general al proyecto. No podemos permitirnos semejante descontrol". La redacción final fue confirmada por el Desarrollador antes de escribirla.
+- **No reintroducir:** condiciones de negocio copiadas manualmente entre múltiples políticas RLS, componentes o endpoints sin pasar por una función/constante compartida — incluye no repetir el patrón viejo de `auth.uid()` directo al día que se implemente el helper `familia_id_de_usuario()` de la Fase 5.
+
 ## Glosario: "Cumplimiento normativo" → "Documentación" (2026-07-18)
 
 - **Decía antes:** "Cumplimiento normativo (documental, por Prestadora)".

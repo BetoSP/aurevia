@@ -133,8 +133,9 @@ Separación estricta entre roles técnicos, administrativos y operativos. Ningú
 9. **Git**: commit + push tras cada conjunto de cambios coherente. Mensajes en español, formato `tipo: descripción breve` (`feat:`, `fix:`, `docs:`, etc.). Nunca subir `.env`, credenciales ni datos reales.
 10. **Cálculos legales/económicos siempre parametrizados** — nunca números escritos en código; siempre la escala vigente a la fecha del hecho (ver §3).
 11. **Compatibilidad multiplataforma obligatoria**: Windows/macOS/Linux/Android/iOS × Chrome/Firefox/Safari/Edge. No asumir un único navegador o dispositivo (traducción automática del navegador, permisos de cámara, geolocalización, notificaciones, PWA).
+12. **Ningún patrón de lógica repetido sin punto único de verdad**: si la misma decisión (regla de acceso, validación, cálculo, mapeo de estado/color, criterio de permisos, etc.) aparece en más de un lugar del código, existe una única función/constante/vista que todos consumen — nunca la misma condición copiada archivo por archivo. Cuando la plataforma no permite compartir código directamente entre los puntos (ej. políticas RLS de Postgres, que no llaman funciones de aplicación en JS), el punto único de verdad es una función SQL reutilizada por todas las políticas, nunca la misma condición repetida política por política. Antes de agregar un patrón que ya podría existir en otro lugar del proyecto, buscarlo primero (grep/lectura del código real) — no asumir que no existe.
 
-**Checklist antes de cerrar cualquier tarea:** ¿se respetaron las 11 reglas? ¿se mantuvo el aislamiento multi-tenant? ¿términos del glosario aprobados? ¿sin datos hardcodeados? ¿4 estados cubiertos? ¿info sensible protegida? ¿documentación actualizada? Si alguna respuesta es no, la tarea no está terminada.
+**Checklist antes de cerrar cualquier tarea:** ¿se respetaron las 12 reglas? ¿se mantuvo el aislamiento multi-tenant? ¿términos del glosario aprobados? ¿sin datos hardcodeados? ¿4 estados cubiertos? ¿info sensible protegida? ¿documentación actualizada? Si alguna respuesta es no, la tarea no está terminada.
 
 ## 8. Despliegue e infraestructura
 
