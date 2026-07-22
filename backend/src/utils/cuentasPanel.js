@@ -139,6 +139,55 @@ export async function crearAsistenteDirecto({
   }
 }
 
+// Invita a una persona al círculo de cuidado de una Familia ya existente (Fase 5): crea su
+// cuenta con `crearCuentaConPerfil` igual que cualquier otro rol de login propio, y en vez
+// de una fila en `familias` (eso es solo para el titular) crea la fila en `miembros_familia`
+// que la vincula. Rol fijo `solo_lectura` — es el único que existe hoy (ver
+// schema_circulo_cuidado.sql).
+export async function invitarMiembroCirculo({ email, nombre, telefono, familiaId, prestadoraId, invitadoPor }) {
+  if (!nombre || !email || !familiaId) {
+    throw new Error('Faltan datos obligatorios (nombre, email, familiaId)');
+  }
+
+  let miembroId;
+  try {
+    ({ userId: miembroId } = await crearCuentaConPerfil({
+      email, nombre, telefono, rol: 'familia', prestadoraId,
+    }));
+
+    const { error: errorMiembro } = await supabase
+      .from('miembros_familia')
+      .insert({ usuario_id: miembroId, familia_id: familiaId, email, rol: 'solo_lectura', creado_por: invitadoPor });
+    if (errorMiembro) throw new Error(errorMiembro.message);
+
+    return { miembroId };
+  } catch (error) {
+    if (miembroId) {
+      await supabase.from('miembros_familia').delete().eq('usuario_id', miembroId);
+      await borrarCuenta(miembroId, { prestadoraId });
+    }
+    throw error;
+  }
+}
+
+// Revoca el acceso de un miembro invitado del círculo de cuidado — borra su fila en
+// `miembros_familia` (RLS/`ON DELETE CASCADE` no alcanza porque el borrado real es la
+// cuenta completa, no la fila) y su cuenta, reutilizando `borrarCuenta` para no duplicar la
+// validación de tenant que ya hace esa función.
+export async function revocarMiembroCirculo(usuarioId, { prestadoraId, familiaId }) {
+  const { data: miembro, error: errorMiembro } = await supabase
+    .from('miembros_familia')
+    .select('familia_id')
+    .eq('usuario_id', usuarioId)
+    .single();
+  if (errorMiembro || !miembro || miembro.familia_id !== familiaId) {
+    throw new Error('Esta persona no pertenece al círculo de cuidado de esta Familia');
+  }
+
+  await supabase.from('miembros_familia').delete().eq('usuario_id', usuarioId);
+  await borrarCuenta(usuarioId, { prestadoraId });
+}
+
 // Lógica de alta manual de Familia+Paciente, extraída de panelCuentas.js (ruta
 // /familia-directa) por el mismo motivo que crearAsistenteDirecto de arriba.
 export async function crearFamiliaDirecta({

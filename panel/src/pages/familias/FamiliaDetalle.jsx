@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useLocale } from '../../i18n/LocaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { usePermisos } from '../../context/PermisosContext';
+import { useConfirmarDestructivo } from '../../context/TenantSessionContext';
 import { esAdminOSuperior } from '../../lib/roles';
 import { linkWhatsapp } from '../../lib/telefono';
 import { supabase } from '../../lib/supabaseClient';
@@ -13,6 +14,9 @@ import { PrestacionesPaciente } from './PrestacionesPaciente';
 import { EditarPacienteModal } from './EditarPacienteModal';
 import { NuevoPacienteModal } from './NuevoPacienteModal';
 import { MonitoreoVitalesPaciente } from './MonitoreoVitalesPaciente';
+import { InvitarCirculoModal } from './InvitarCirculoModal';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export function FamiliaDetalle() {
   const { t } = useLocale();
@@ -20,6 +24,7 @@ export function FamiliaDetalle() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { puede } = usePermisos();
+  const confirmarDestructivo = useConfirmarDestructivo();
   const esAdmin = esAdminOSuperior(usuario?.rol);
   const puedeEditarFamilia = esAdmin || puede('editar_datos_familia');
   const puedeEditarPaciente = esAdmin || puede('editar_datos_paciente');
@@ -34,6 +39,11 @@ export function FamiliaDetalle() {
   const [guardandoContacto, setGuardandoContacto] = useState(false);
   const [errorContacto, setErrorContacto] = useState(null);
   const [contactoGuardado, setContactoGuardado] = useState(false);
+  const [circulo, setCirculo] = useState(null);
+  const [estadoCirculo, setEstadoCirculo] = useState('cargando');
+  const [errorCirculo, setErrorCirculo] = useState(null);
+  const [mostrarInvitarCirculo, setMostrarInvitarCirculo] = useState(false);
+  const [quitandoUsuarioId, setQuitandoUsuarioId] = useState(null);
 
   const recargar = useCallback(async () => {
     setEstado('cargando');
@@ -61,9 +71,53 @@ export function FamiliaDetalle() {
     setEstado('listo');
   }, [id]);
 
+  const recargarCirculo = useCallback(async () => {
+    setEstadoCirculo('cargando');
+    setErrorCirculo(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/cuentas/familia/${id}/circulo`, {
+        headers: { Authorization: `Bearer ${data.session?.access_token}` },
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(resultado.error);
+      }
+      setCirculo(resultado.miembros);
+      setEstadoCirculo(resultado.miembros.length ? 'listo' : 'vacio');
+    } catch {
+      setErrorCirculo(t.comun.error_generico);
+      setEstadoCirculo('error');
+    }
+  }, [id, t]);
+
   useEffect(() => {
     recargar();
-  }, [recargar]);
+    recargarCirculo();
+  }, [recargar, recargarCirculo]);
+
+  async function quitarMiembroCirculo(usuarioId) {
+    if (!confirmarDestructivo(t.familias.circulo.quitar_confirmacion)) {
+      return;
+    }
+    setQuitandoUsuarioId(usuarioId);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/cuentas/familia/${id}/circulo/${usuarioId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${data.session?.access_token}` },
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(resultado.error || t.familias.circulo.quitar_error);
+      }
+      recargarCirculo();
+    } catch (err) {
+      setErrorCirculo(err.message);
+    } finally {
+      setQuitandoUsuarioId(null);
+    }
+  }
 
   function setCampoContacto(campo, valor) {
     setFormContacto((f) => ({ ...f, [campo]: valor }));
@@ -170,6 +224,50 @@ export function FamiliaDetalle() {
         </Button>
       )}
 
+      <h2>{t.familias.circulo.titulo}</h2>
+      <p className="panel-explicacion">{t.familias.circulo.descripcion}</p>
+      {estadoCirculo === 'cargando' && <p className="estado-cargando">{t.comun.cargando}</p>}
+      {estadoCirculo === 'error' && <p className="estado-vacio">{errorCirculo || t.comun.error_generico}</p>}
+      {estadoCirculo === 'vacio' && <p className="estado-vacio">{t.familias.circulo.sin_miembros}</p>}
+      {estadoCirculo === 'listo' && (
+        <table className="panel-tabla">
+          <thead>
+            <tr>
+              <th>{t.familias.circulo.col_nombre}</th>
+              <th>{t.familias.circulo.col_email}</th>
+              <th>{t.familias.circulo.col_rol}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {circulo.map((m) => (
+              <tr key={m.usuario_id}>
+                <td>{m.usuarios?.nombre || '—'}</td>
+                <td>{m.email || '—'}</td>
+                <td>{t.familias.circulo.rol_solo_lectura}</td>
+                <td>
+                  {puedeEditarFamilia && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => quitarMiembroCirculo(m.usuario_id)}
+                      disabled={quitandoUsuarioId === m.usuario_id}
+                    >
+                      {t.familias.circulo.quitar}
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {errorCirculo && estadoCirculo === 'listo' && <Alert variant="error">{errorCirculo}</Alert>}
+      {puedeEditarFamilia && (
+        <Button variant="secondary" onClick={() => setMostrarInvitarCirculo(true)}>
+          {t.familias.circulo.agregar}
+        </Button>
+      )}
+
       <h2>{t.familias.guardias_activas}</h2>
       <p className="estado-vacio">{t.familias.modulo_no_disponible}</p>
 
@@ -205,6 +303,17 @@ export function FamiliaDetalle() {
           onCreado={() => {
             setMostrarNuevoPaciente(false);
             recargar();
+          }}
+        />
+      )}
+
+      {mostrarInvitarCirculo && (
+        <InvitarCirculoModal
+          familiaId={familia.id}
+          onClose={() => setMostrarInvitarCirculo(false)}
+          onInvitado={() => {
+            setMostrarInvitarCirculo(false);
+            recargarCirculo();
           }}
         />
       )}

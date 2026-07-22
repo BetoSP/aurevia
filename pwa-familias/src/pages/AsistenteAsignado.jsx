@@ -7,6 +7,7 @@ export default function AsistenteAsignado() {
   const { id } = useParams();
   const { t } = useLocale();
   const [datos, setDatos] = useState(null);
+  const [rolCirculo, setRolCirculo] = useState(null);
   const [error, setError] = useState('');
   const [estrellas, setEstrellas] = useState(0);
   const [comentario, setComentario] = useState('');
@@ -23,6 +24,12 @@ export default function AsistenteAsignado() {
       .catch(() => {
         if (activo) setError(t.comun.error_generico);
       });
+    api
+      .perfil()
+      .then(({ perfil }) => {
+        if (activo) setRolCirculo(perfil.rolCirculo);
+      })
+      .catch(() => {});
     return () => {
       activo = false;
     };
@@ -78,7 +85,12 @@ export default function AsistenteAsignado() {
         ))
       )}
 
-      {guardiaId && !enviado && (
+      {guardiaId && !enviado && rolCirculo === 'solo_lectura' && (
+        <div style={{ marginTop: '1.5rem' }} className="alert">
+          {t.asistente.calificar_solo_lectura}
+        </div>
+      )}
+      {guardiaId && !enviado && rolCirculo !== 'solo_lectura' && (
         <div style={{ marginTop: '1.5rem' }}>
           <h2>{t.asistente.calificar_titulo}</h2>
           <div className="estrellas">

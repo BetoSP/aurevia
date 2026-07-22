@@ -71,6 +71,8 @@ export default function MiPerfil() {
         <div>{perfil.telefono || '—'}</div>
         <div style={{ fontWeight: 700, color: 'var(--azul-oscuro)', fontSize: '0.85rem' }}>{t.perfil.plan}</div>
         <div>{perfil.plan || '—'}</div>
+        <div style={{ fontWeight: 700, color: 'var(--azul-oscuro)', fontSize: '0.85rem' }}>{t.perfil.rol_circulo}</div>
+        <div>{perfil.rolCirculo === 'titular' ? t.perfil.rol_titular : t.perfil.rol_solo_lectura}</div>
       </div>
 
       <h2 style={{ marginTop: '2rem' }}>{t.perfil.notificaciones_titulo}</h2>

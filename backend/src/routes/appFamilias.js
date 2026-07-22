@@ -10,7 +10,7 @@ async function pacienteDeLaFamilia(pacienteId, usuarioFamilia) {
     .from('pacientes')
     .select('id, nombre, domicilio, lat, lng, patologias, medicacion_habitual, nivel_complejidad, familia_id, prestadora_id')
     .eq('id', pacienteId)
-    .eq('familia_id', usuarioFamilia.id)
+    .eq('familia_id', usuarioFamilia.familiaId)
     .eq('prestadora_id', usuarioFamilia.prestadoraId)
     .maybeSingle();
   return data;
@@ -36,10 +36,16 @@ appFamiliasRouter.get('/perfil', requiereRolFamilia, async (req, res) => {
   const { data: familia } = await supabase
     .from('familias')
     .select('plan')
-    .eq('id', req.usuarioFamilia.id)
+    .eq('id', req.usuarioFamilia.familiaId)
     .maybeSingle();
 
-  res.json({ perfil: { ...usuario, plan: familia?.plan ?? null } });
+  res.json({
+    perfil: {
+      ...usuario,
+      plan: familia?.plan ?? null,
+      rolCirculo: req.usuarioFamilia.rolCirculo,
+    },
+  });
 });
 
 // ============================================================================
@@ -51,7 +57,7 @@ appFamiliasRouter.get('/pacientes', requiereRolFamilia, async (req, res) => {
   const { data, error } = await supabase
     .from('pacientes')
     .select('id, nombre, domicilio')
-    .eq('familia_id', req.usuarioFamilia.id)
+    .eq('familia_id', req.usuarioFamilia.familiaId)
     .eq('prestadora_id', req.usuarioFamilia.prestadoraId)
     .order('nombre');
   if (error) {
@@ -290,6 +296,13 @@ appFamiliasRouter.get('/pacientes/:id/verificar-asistente/:qrToken', requiereRol
 // ============================================================================
 
 appFamiliasRouter.post('/guardias/:guardiaId/calificar', requiereRolFamilia, async (req, res) => {
+  // Un miembro invitado con acceso de solo lectura ve todo lo mismo que el titular, pero no
+  // puede calificar guardias — es la única acción de escritura real hoy expuesta a la
+  // Familia en la PWA (ver docs/claude_history.md, Fase 5).
+  if (req.usuarioFamilia.rolCirculo === 'solo_lectura') {
+    return res.status(403).json({ error: 'Tu acceso es de solo lectura' });
+  }
+
   const { estrellas, comentario } = req.body || {};
   if (!Number.isInteger(estrellas) || estrellas < 1 || estrellas > 5) {
     return res.status(400).json({ error: 'La calificación debe ser un número entero de 1 a 5' });
@@ -299,7 +312,7 @@ appFamiliasRouter.post('/guardias/:guardiaId/calificar', requiereRolFamilia, asy
     .from('guardias')
     .select('id, asistente_id, paciente_id, prestadora_id, pacientes!inner(familia_id)')
     .eq('id', req.params.guardiaId)
-    .eq('pacientes.familia_id', req.usuarioFamilia.id)
+    .eq('pacientes.familia_id', req.usuarioFamilia.familiaId)
     .maybeSingle();
   if (!guardia) {
     return res.status(404).json({ error: 'Guardia no encontrada' });
@@ -308,7 +321,7 @@ appFamiliasRouter.post('/guardias/:guardiaId/calificar', requiereRolFamilia, asy
   const { error } = await supabase.from('calificaciones_asistente').insert({
     asistente_id: guardia.asistente_id,
     paciente_id: guardia.paciente_id,
-    familia_id: req.usuarioFamilia.id,
+    familia_id: req.usuarioFamilia.familiaId,
     guardia_id: guardia.id,
     prestadora_id: guardia.prestadora_id,
     estrellas,

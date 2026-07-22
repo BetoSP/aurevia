@@ -1,7 +1,14 @@
 import { Router } from 'express';
 import { requiereRolPanel } from '../middleware/requiereRolPanel.js';
 import { supabase } from '../db/connection.js';
-import { crearCuentaConPerfil, borrarCuenta, crearAsistenteDirecto, crearFamiliaDirecta } from '../utils/cuentasPanel.js';
+import {
+  crearCuentaConPerfil,
+  borrarCuenta,
+  crearAsistenteDirecto,
+  crearFamiliaDirecta,
+  invitarMiembroCirculo,
+  revocarMiembroCirculo,
+} from '../utils/cuentasPanel.js';
 import { tienePermiso, ACCIONES_PERMISOS } from '../utils/permisos.js';
 
 export const panelCuentasRouter = Router();
@@ -241,5 +248,81 @@ panelCuentasRouter.post('/asistente-directo', requiereRolPanel, requierePermiso(
     res.json({ ok: true, asistenteId });
   } catch (error) {
     res.status(error.message.startsWith('Faltan datos') ? 400 : 500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// Círculo de cuidado (Fase 5) — reutiliza el permiso 'editar_datos_familia' ya existente:
+// gestionar quién más tiene acceso a la Familia es parte de administrar sus datos, no una
+// acción nueva (ver docs/claude_history.md).
+// ============================================================================
+
+panelCuentasRouter.get('/familia/:familiaId/circulo', requiereRolPanel, requierePermiso('editar_datos_familia'), async (req, res) => {
+  let queryFamilia = supabase.from('familias').select('id').eq('id', req.params.familiaId);
+  if (req.usuarioPanel.rol !== 'superadmin') {
+    queryFamilia = queryFamilia.eq('prestadora_id', req.usuarioPanel.prestadoraId);
+  }
+  const { data: familia } = await queryFamilia.maybeSingle();
+  if (!familia) {
+    return res.status(404).json({ error: 'Familia no encontrada' });
+  }
+
+  const { data: miembros, error } = await supabase
+    .from('miembros_familia')
+    .select('usuario_id, email, rol, created_at, usuarios!miembros_familia_usuario_id_fkey(nombre)')
+    .eq('familia_id', req.params.familiaId)
+    .order('created_at', { ascending: true });
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ miembros: miembros || [] });
+});
+
+panelCuentasRouter.post('/familia/:familiaId/circulo', requiereRolPanel, requierePermiso('editar_datos_familia'), async (req, res) => {
+  const { nombre, email, telefono } = req.body || {};
+  const prestadoraId = req.usuarioPanel.prestadoraId;
+
+  let queryFamilia = supabase.from('familias').select('id').eq('id', req.params.familiaId);
+  if (req.usuarioPanel.rol !== 'superadmin') {
+    queryFamilia = queryFamilia.eq('prestadora_id', prestadoraId);
+  }
+  const { data: familia } = await queryFamilia.maybeSingle();
+  if (!familia) {
+    return res.status(404).json({ error: 'Familia no encontrada' });
+  }
+
+  try {
+    const { miembroId } = await invitarMiembroCirculo({
+      email,
+      nombre,
+      telefono,
+      familiaId: req.params.familiaId,
+      prestadoraId,
+      invitadoPor: req.usuarioPanel.id,
+    });
+    res.json({ ok: true, usuarioId: miembroId });
+  } catch (error) {
+    res.status(error.message.startsWith('Faltan datos') ? 400 : 500).json({ error: error.message });
+  }
+});
+
+panelCuentasRouter.delete('/familia/:familiaId/circulo/:usuarioId', requiereRolPanel, requierePermiso('editar_datos_familia'), async (req, res) => {
+  const prestadoraId = req.usuarioPanel.prestadoraId;
+
+  let queryFamilia = supabase.from('familias').select('id').eq('id', req.params.familiaId);
+  if (req.usuarioPanel.rol !== 'superadmin') {
+    queryFamilia = queryFamilia.eq('prestadora_id', prestadoraId);
+  }
+  const { data: familia } = await queryFamilia.maybeSingle();
+  if (!familia) {
+    return res.status(404).json({ error: 'Familia no encontrada' });
+  }
+
+  try {
+    await revocarMiembroCirculo(req.params.usuarioId, { prestadoraId, familiaId: req.params.familiaId });
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
