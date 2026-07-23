@@ -21,14 +21,24 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
+**2026-07-23: Fase 8 del plan de rediseño de frontend — Onboarding diferenciado por rol,
+verificación visual completa en la Organización Sandbox real, cerrando la limitación
+registrada el 2026-07-22.** La contraseña de la cuenta `superadmin` (única vía de acceso a
+Sandbox) estaba desactualizada — reseteada vía Admin API de Supabase y actualizada en
+`No hacer commit/claves y contraseñas.txt`. Con Sandbox realmente vacía de Asistentes: el
+checklist del Dashboard mostró "2/3 completados" (paso de Asistente pendiente con su CTA,
+Familia y Equipo con badge "Completado", coincidiendo con los datos reales ya cargados en
+Sandbox), y `/asistentes` mostró el estado vacío nuevo con el botón "Nuevo Asistente" en
+vez del texto genérico. 0 errores de consola nuevos. Ver pendiente #80 en
+`docs/PENDIENTES.md`, ahora 🟢 Resuelto.
+
 **2026-07-22: Fase 8 del plan de rediseño de frontend — Onboarding diferenciado por rol
-para Prestadora nueva, construida, verificada en navegador real y pendiente de commit/
-push/deploy.** Checklist de 3 pasos (Asistente → Familia → invitar equipo) en el Dashboard,
+para Prestadora nueva, construida, verificada en navegador real, commiteada, pusheada y
+desplegada.** Checklist de 3 pasos (Asistente → Familia → invitar equipo) en el Dashboard,
 derivado en vivo sin tabla nueva; variante informativa sin CTA para Admin_plataforma en
 modo tenant; estados vacíos con CTA único en Asistentes/Familias. Ver fila 2026-07-22 (Fase
-8) de "Archivos creados/modificados por sesión" más abajo para el detalle completo,
-incluida la limitación de verificación registrada: no se pudo probar el estado realmente
-vacío en Sandbox por credencial de `superadmin` desactualizada.
+8) de "Archivos creados/modificados por sesión" más abajo para el detalle completo. Commit
+`b61df1b` en `origin/main`; Panel desplegado a `https://aurevia-panel.vercel.app`.
 
 **2026-07-22: Fase 6 del plan de rediseño de frontend — Estado de Hospitalización y
 causales de Cese de servicio, construida, verificada en navegador real contra Sandbox/Demo,
