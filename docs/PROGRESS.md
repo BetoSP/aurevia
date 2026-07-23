@@ -21,6 +21,30 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
+**2026-07-23: Fase 9 del plan de rediseño de frontend — Offline-first en PWA Asistentes,
+construida y verificada end-to-end en navegador real.** Cola local en IndexedDB
+(`pwa-asistentes/src/lib/colaOffline.js`, escrita a mano, sin librería nueva) con reintento
+automático al volver la señal vía evento `online`/`visibilitychange`
+(`pwa-asistentes/src/lib/sincronizarCola.js`, sin Background Sync API por no estar soportada
+en Safari/iOS), disparado una sola vez desde `Layout.jsx`. Identificador `clienteUuid`
+generado en el dispositivo antes de encolar, para evitar duplicados al sincronizar —
+reutiliza el guard de idempotencia que ya existía en `backend/src/routes/appAsistentes.js`
+(400 cuando `checkin_at`/`checkout_at` ya estaban seteados), sumándole el flag
+`yaRegistrado: true` para que el cliente pueda distinguir "esto ya se había sincronizado
+antes" de un error real. Estado visual explícito (ícono ⏳ + texto, nunca solo color) en
+`GuardiaActiva.jsx`, `ReporteDiario.jsx` y el listado `MisGuardias.jsx`. Se agregó además un
+botón "Completar a mano" en Reporte Diario para cuando no hay señal, porque "Analizar con
+IA" necesita conexión y sin ese atajo el Asistente hubiera quedado sin forma de llegar a la
+pantalla de confirmación estando offline — no estaba en el plan original, se identificó como
+hueco de diseño durante la implementación. Verificado en navegador real (Playwright) contra
+la Prestadora Demo, simulando corte de señal a nivel de `fetch`: check-in offline se encoló
+y sincronizó solo al simular la reconexión (`checkin_at` confirmado por SQL directo);
+Reporte Diario offline deshabilitó IA y foto (con texto explicativo), permitió completar a
+mano, encoló la confirmación, mostró la insignia "pendiente de enviar" en `MisGuardias.jsx`
+y esta desapareció sola al reconectar — confirmado por SQL que el reporte quedó insertado y
+la guardia pasó a `estado='completada'` con `checkout_at` seteado. 0 errores de consola
+nuevos. Ver pendiente #81 en `docs/PENDIENTES.md`. Pendiente: commit/push/deploy explícito.
+
 **2026-07-23: Fase 8 del plan de rediseño de frontend — Onboarding diferenciado por rol,
 verificación visual completa en la Organización Sandbox real, cerrando la limitación
 registrada el 2026-07-22.** La contraseña de la cuenta `superadmin` (única vía de acceso a

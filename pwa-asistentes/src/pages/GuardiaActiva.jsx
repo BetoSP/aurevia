@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useLocale } from '../i18n/LocaleContext';
+import { agregarACola, nuevoId, pendientesDeGuardia } from '../lib/colaOffline';
+import { sincronizarCola, suscribirseASincronizacion } from '../lib/sincronizarCola';
+
+function esErrorDeRed(error) {
+  return error instanceof TypeError;
+}
 
 function obtenerUbicacion() {
   return new Promise((resolve, reject) => {
@@ -35,6 +41,7 @@ export default function GuardiaActiva() {
   const [reportes, setReportes] = useState(null);
   const [mostrandoReportes, setMostrandoReportes] = useState(false);
   const [tick, setTick] = useState(0);
+  const [checkinPendiente, setCheckinPendiente] = useState(null); // { desde } o null
 
   function cargar() {
     api
@@ -43,15 +50,30 @@ export default function GuardiaActiva() {
       .catch(() => setError(t.comun.error_generico));
   }
 
+  async function revisarPendientes() {
+    const pendientes = await pendientesDeGuardia(id);
+    const checkin = pendientes.find((p) => p.tipo === 'checkin');
+    setCheckinPendiente(checkin ? { desde: checkin.creadoEn } : null);
+  }
+
   useEffect(() => {
     cargar();
+    revisarPendientes();
   }, [id]);
 
   useEffect(() => {
-    if (!guardia?.checkin_at || guardia?.checkout_at) return;
+    const desuscribir = suscribirseASincronizacion(() => {
+      cargar();
+      revisarPendientes();
+    });
+    return desuscribir;
+  }, [id]);
+
+  useEffect(() => {
+    if ((!guardia?.checkin_at && !checkinPendiente) || guardia?.checkout_at) return;
     const intervalo = setInterval(() => setTick((v) => v + 1), 30000);
     return () => clearInterval(intervalo);
-  }, [guardia]);
+  }, [guardia, checkinPendiente]);
 
   async function alHacerCheckin() {
     setError('');
@@ -59,11 +81,20 @@ export default function GuardiaActiva() {
     setHaciendoCheckin(true);
     try {
       const { lat, lng } = await obtenerUbicacion();
-      const resultado = await api.checkin(id, { lat, lng });
-      if (!resultado.dentroDeRango) {
-        setAviso(t.guardia_activa.fuera_de_rango);
+      const clienteUuid = nuevoId();
+      try {
+        const resultado = await api.checkin(id, { lat, lng, clienteUuid });
+        if (!resultado.dentroDeRango) {
+          setAviso(t.guardia_activa.fuera_de_rango);
+        }
+        cargar();
+      } catch (e) {
+        if (!esErrorDeRed(e)) throw e;
+        // Sin señal: se guarda local y se reintenta solo al volver la conexión.
+        await agregarACola({ id: clienteUuid, tipo: 'checkin', guardiaId: id, payload: { lat, lng, clienteUuid } });
+        setCheckinPendiente({ desde: Date.now() });
+        sincronizarCola();
       }
-      cargar();
     } catch (e) {
       setError(e.message === 'sin_geo' ? t.guardia_activa.geo_no_disponible : t.comun.error_generico);
     } finally {
@@ -109,15 +140,21 @@ export default function GuardiaActiva() {
 
       {aviso && <div className="alert alert-alerta">{aviso}</div>}
 
-      {!guardia.checkin_at && (
+      {checkinPendiente && (
+        <div className="alert alert-info" aria-label={t.comun.pendiente_de_enviar}>
+          <span aria-hidden="true">⏳</span> {t.comun.pendiente_de_enviar}
+        </div>
+      )}
+
+      {!guardia.checkin_at && !checkinPendiente && (
         <button className="btn btn-primary btn-full" onClick={alHacerCheckin} disabled={haciendoCheckin}>
           {haciendoCheckin ? t.guardia_activa.haciendo_checkin : t.guardia_activa.hacer_checkin}
         </button>
       )}
 
-      {guardia.checkin_at && !guardia.checkout_at && (
+      {(guardia.checkin_at || checkinPendiente) && !guardia.checkout_at && (
         <>
-          <div className="guardia-timer">{tiempoTranscurrido(guardia.checkin_at)}</div>
+          <div className="guardia-timer">{tiempoTranscurrido(guardia.checkin_at || checkinPendiente.desde)}</div>
           <p className="guardia-card-detalle" style={{ textAlign: 'center', marginTop: '-0.5rem' }}>
             {t.guardia_activa.tiempo_transcurrido}
           </p>

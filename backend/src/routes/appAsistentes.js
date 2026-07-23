@@ -117,7 +117,9 @@ appAsistentesRouter.post('/guardias/:id/checkin', requiereRolAsistente, async (r
     return res.status(404).json({ error: 'Guardia no encontrada' });
   }
   if (guardia.checkin_at) {
-    return res.status(400).json({ error: 'Esta guardia ya tiene check-in registrado' });
+    // yaRegistrado: true — permite que el cliente offline (Fase 9) distinga "ya se había
+    // sincronizado antes" de un error real, y dé la acción encolada por sincronizada.
+    return res.status(400).json({ error: 'Esta guardia ya tiene check-in registrado', yaRegistrado: true });
   }
 
   const { data: paciente } = await supabase
@@ -246,7 +248,8 @@ appAsistentesRouter.post('/guardias/:id/reporte/confirmar', requiereRolAsistente
     return res.status(400).json({ error: 'No se puede hacer check-out sin check-in previo' });
   }
   if (guardia.checkout_at) {
-    return res.status(400).json({ error: 'Esta guardia ya tiene check-out registrado' });
+    // yaRegistrado: true — mismo criterio que en /checkin (Fase 9, cliente offline).
+    return res.status(400).json({ error: 'Esta guardia ya tiene check-out registrado', yaRegistrado: true });
   }
 
   const { data: reporte, error: errorReporte } = await supabase

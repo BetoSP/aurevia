@@ -19,7 +19,9 @@ async function pedido(ruta, opciones = {}) {
   });
   const datos = await respuesta.json().catch(() => ({}));
   if (!respuesta.ok) {
-    throw new Error(datos.error || 'Error de red');
+    const error = new Error(datos.error || 'Error de red');
+    if (datos.yaRegistrado) error.yaRegistrado = true;
+    throw error;
   }
   return datos;
 }
@@ -28,7 +30,7 @@ export const api = {
   perfil: () => pedido('/perfil'),
   misGuardias: () => pedido('/guardias'),
   guardia: (id) => pedido(`/guardias/${id}`),
-  checkin: (id, { lat, lng }) => pedido(`/guardias/${id}/checkin`, { method: 'POST', body: JSON.stringify({ lat, lng }) }),
+  checkin: (id, datos) => pedido(`/guardias/${id}/checkin`, { method: 'POST', body: JSON.stringify(datos) }),
   estructurarReporte: (id, textoLibre) =>
     pedido(`/guardias/${id}/reporte/estructurar`, { method: 'POST', body: JSON.stringify({ textoLibre }) }),
   subirFotoReporte: (id, archivo) => {

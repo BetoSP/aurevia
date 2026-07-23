@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useLocale } from '../i18n/LocaleContext';
+import { agregarACola, nuevoId } from '../lib/colaOffline';
+import { sincronizarCola } from '../lib/sincronizarCola';
+
+function esErrorDeRed(error) {
+  return error instanceof TypeError;
+}
 
 const ESTADOS_ANIMO = ['muy_bien', 'bien', 'regular', 'mal', 'muy_mal'];
 const CARAS_ANIMO = { muy_bien: '😄', bien: '🙂', regular: '😐', mal: '🙁', muy_mal: '😣' };
@@ -59,8 +65,21 @@ export default function ReporteDiario() {
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState('');
   const [guardadoOk, setGuardadoOk] = useState(false);
+  const [guardadoPendiente, setGuardadoPendiente] = useState(false);
   const [vitalesHabilitados, setVitalesHabilitados] = useState(false);
   const [rangosVitales, setRangosVitales] = useState({});
+  const [enLinea, setEnLinea] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const alConectar = () => setEnLinea(true);
+    const alDesconectar = () => setEnLinea(false);
+    window.addEventListener('online', alConectar);
+    window.addEventListener('offline', alDesconectar);
+    return () => {
+      window.removeEventListener('online', alConectar);
+      window.removeEventListener('offline', alDesconectar);
+    };
+  }, []);
 
   useEffect(() => {
     let activo = true;
@@ -88,6 +107,20 @@ export default function ReporteDiario() {
     } finally {
       setEstructurando(false);
     }
+  }
+
+  // Sin conexión (o si la IA falla), el Asistente completa los campos a mano en vez de
+  // quedar bloqueado sin poder llegar a la pantalla de revisión/confirmación.
+  function completarAMano() {
+    setError('');
+    setEstructurado({
+      alimentacion: {},
+      medicacion: [],
+      signos_vitales: signosIniciales({}),
+      estado_animo: null,
+      incidentes: '',
+      observaciones: '',
+    });
   }
 
   function actualizarCampo(campo, valor) {
@@ -119,7 +152,8 @@ export default function ReporteDiario() {
     setConfirmando(true);
     try {
       const { lat, lng } = await obtenerUbicacion();
-      await api.confirmarReporte(id, {
+      const clienteUuid = nuevoId();
+      const datos = {
         textoLibre,
         alimentacion: estructurado.alimentacion,
         medicacion: estructurado.medicacion,
@@ -130,8 +164,18 @@ export default function ReporteDiario() {
         fotoUrl,
         lat,
         lng,
-      });
-      setGuardadoOk(true);
+        clienteUuid,
+      };
+      try {
+        await api.confirmarReporte(id, datos);
+        setGuardadoOk(true);
+      } catch (e) {
+        if (!esErrorDeRed(e)) throw e;
+        // Sin señal: se guarda local y se reintenta solo al volver la conexión.
+        await agregarACola({ id: clienteUuid, tipo: 'reporte', guardiaId: id, payload: datos });
+        setGuardadoPendiente(true);
+        sincronizarCola();
+      }
       setTimeout(() => navigate('/guardias'), 1500);
     } catch (e) {
       setError(e.message === 'sin_geo' ? t.guardia_activa.geo_no_disponible : t.comun.error_generico);
@@ -141,6 +185,13 @@ export default function ReporteDiario() {
   }
 
   if (guardadoOk) return <div className="alert alert-info">{t.reporte.guardado_ok}</div>;
+  if (guardadoPendiente) {
+    return (
+      <div className="alert alert-alerta" aria-label={t.reporte.guardado_pendiente}>
+        <span aria-hidden="true">⏳</span> {t.reporte.guardado_pendiente}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -162,9 +213,17 @@ export default function ReporteDiario() {
               rows={6}
             />
           </div>
-          <button className="btn btn-primary btn-full" onClick={alEstructurar} disabled={estructurando || !textoLibre.trim()}>
+          <button className="btn btn-primary btn-full" onClick={alEstructurar} disabled={estructurando || !textoLibre.trim() || !enLinea}>
             {estructurando ? t.reporte.estructurando : t.reporte.estructurar}
           </button>
+          {!enLinea && (
+            <>
+              <p className="guardia-card-detalle">{t.reporte.ia_requiere_conexion}</p>
+              <button className="btn btn-secondary btn-full" onClick={completarAMano}>
+                {t.reporte.completar_a_mano}
+              </button>
+            </>
+          )}
         </>
       )}
 
@@ -238,7 +297,8 @@ export default function ReporteDiario() {
 
           <div className="form-field">
             <label htmlFor="foto">{t.reporte.agregar_foto}</label>
-            <input id="foto" type="file" accept="image/jpeg,image/png" onChange={alSubirFoto} />
+            <input id="foto" type="file" accept="image/jpeg,image/png" onChange={alSubirFoto} disabled={!enLinea} />
+            {!enLinea && <p className="guardia-card-detalle">{t.reporte.foto_requiere_conexion}</p>}
           </div>
 
           <button className="btn btn-exito btn-full" onClick={alConfirmar} disabled={confirmando}>

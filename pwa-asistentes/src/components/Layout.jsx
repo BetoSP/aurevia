@@ -1,10 +1,17 @@
+import { useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../i18n/LocaleContext';
+import { iniciarSincronizacionAutomatica } from '../lib/sincronizarCola';
 
 export default function Layout() {
   const { logout } = useAuth();
   const { t } = useLocale();
+
+  // Reintento de check-in/reporte guardados sin señal — solo con sesión activa (Fase 9).
+  useEffect(() => {
+    iniciarSincronizacionAutomatica();
+  }, []);
 
   return (
     <div className="app-layout">
