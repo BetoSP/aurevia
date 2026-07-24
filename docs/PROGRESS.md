@@ -52,11 +52,18 @@ línea 21 (nota del pendiente #65) referenciaban "pendiente #79" para esta funci
 el #79 real ya está usado por una feature distinta y ya cerrada (Fase 7, panel
 Admin_plataforma: estado de pago/uso/riesgo). Se creó el pendiente #84 en `PENDIENTES.md` con
 lo efectivamente verificado, y se corrigieron las 7 referencias erróneas a "#79" a "#84" en
-el código y en la nota del #65. **Sin commit/push/deploy todavía** — pendiente de aprobación
-explícita del Desarrollador. Queda abierto confirmar que los 4 puntos reales de llamada a la
-IA (`reporteIA.js`, `importacionIA.js`, `iaWhatsapp.js`, `alertasIA.js` — ya invocan
-`registrarUsoIA()` según el código, pero no se disparó ninguna llamada real de IA en esta
-sesión para confirmarlo end-to-end) generan filas correctas con costo real en producción.
+el código y en la nota del #65. Además se detectó que `PENDIENTES.md` tenía **dos filas
+distintas usando el número 79** (la Fase 7 ya cerrada y el pedido original de esta
+funcionalidad) — se fusionó el contexto del pedido original dentro de la fila #84 y se
+borró la fila duplicada. **Commiteado (`2286d1c` y `20534f0`), pusheado a `origin/main`**;
+backend redesplegado automáticamente a Railway (workflow "Deploy backend a Railway", run
+exitoso, confirmado con `curl` real: `/health` → `{"status":"ok"}`) y Panel desplegado
+explícitamente a Vercel (`vercel --prod`, deploy `dpl_9JPq6KVGPDYJFmYUBRmVPFf5dDCx`,
+confirmado con `curl` real que `https://aurevia-panel.vercel.app` responde 200). Queda
+abierto confirmar que los 4 puntos reales de llamada a la IA (`reporteIA.js`,
+`importacionIA.js`, `iaWhatsapp.js`, `alertasIA.js` — ya invocan `registrarUsoIA()` según
+el código, pero no se disparó ninguna llamada real de IA en esta sesión para confirmarlo
+end-to-end) generan filas correctas con costo real en producción.
 
 **2026-07-24: Fase 12 del rediseño de frontend — vuelta de Guardias (`Guardias.jsx`).**
 Completa la parte de la Fase 12 que había quedado afuera del primer corte (Dashboard +
