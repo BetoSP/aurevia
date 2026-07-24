@@ -21,6 +21,25 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
+**2026-07-23: Verificación retroactiva de las Fases 1 y 2 del plan de rediseño de frontend
+(`C:\Users\Usuario\.claude\plans\distributed-scribbling-wirth.md`) — ya estaban completas,
+sin haber quedado registradas como tales en este documento.** El Desarrollador pidió
+confirmar contra el código real, no solo contra la documentación (principio "Estado real
+por encima del documentado", `CLAUDE.md` §12). Verificado con lectura directa de código:
+Fase 1 (diccionario de traducción de valores / capa anti-crudo) — `window.prompt()` ya no
+existe en `InformesObraSocial.jsx` (usa `confirmarDestructivo`, `panel/src/pages/
+InformesObraSocial.jsx:277`); el `JSON.stringify` crudo de `VinculoCeseTab.jsx` ya no
+existe (reemplazado por `humanizarClave`/`formatearValorCalculo`, `panel/src/pages/
+asistentes/VinculoCeseTab.jsx:20-29,197-198`). Fase 2 (selectores táctiles con respaldo
+clínico del Reporte Diario) — signos vitales con color por rango normal/alerta y escala de
+ánimo con caritas (Wong-Baker) ya construidos en `pwa-asistentes/src/pages/
+ReporteDiario.jsx:34-39,246-266,270-286`. No se identificó en qué sesión/commit se hizo
+este trabajo (posiblemente disuelto dentro de otras fases sin registrarse con este nombre);
+no requiere código nuevo, solo esta corrección de registro. Con esto, de las 12 fases del
+plan no queda ninguna sin empezar — lo único abierto es la vuelta de Guardias de la Fase 12
+(pendiente #83) y los pendientes sueltos ya registrados aparte (#75, #76, #77, #56). Sin
+archivos de código modificados en esta entrada.
+
 **2026-07-24: Fase 12 del plan de rediseño de frontend — Maquetación general del Panel,
 primer corte (Dashboard + Asistentes + Familias), construida y verificada en navegador
 real.** Alcance acordado explícitamente con el Desarrollador antes de programar (dos
@@ -36,8 +55,10 @@ semana", "Alertas y continuidad"). `Asistentes.jsx` y `Familias.jsx` pasan de
 `DESIGN_SYSTEM.md`. Verificado en navegador real (Playwright) contra Prestadora Demo en
 local (38 Asistentes, 17 Familias reales de prueba) y los 3 locales del Dashboard
 (es-AR/en/pt-BR). `npm run build` y `npm run lint` (oxlint) del Panel limpios, sin
-warnings nuevos. Pendiente #83 registrado 🟡 Resuelto para el corte acordado — falta
-despliegue explícito a Vercel (Panel no tiene auto-deploy).
+warnings nuevos. Commiteado (`9dc47ae`), pusheado a `origin/main` y desplegado a
+producción (`https://aurevia-panel.vercel.app`, deploy `dpl_8MC4cTaT98ppT4Y5cYNxs4UL5C2v`),
+verificado en navegador real contra producción tras el deploy. Pendiente #83 registrado
+🟡 Resuelto para el corte acordado — falta decidir cuándo se hace la vuelta de Guardias.
 
 **2026-07-23: Fase 11 del plan de rediseño de frontend — WhatsApp reforzado para alertas
 críticas, construida, verificada end-to-end en producción real, commiteada, pusheada y
