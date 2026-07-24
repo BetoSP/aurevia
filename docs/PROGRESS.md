@@ -43,8 +43,10 @@ confirmado por SQL directo, `select count(*), min(fecha), max(fecha) from guardi
 prestadora_id = '4e84b0e7-1729-4d07-9e70-56fdbd54cd89'` → 151 filas), y con ese rango la
 grilla mostró los datos reales dentro de la tarjeta nueva; se hizo click en una guardia y
 el modal "Detalle de guardia" se abrió correctamente encima del layout nuevo, sin errores
-de consola. **Todavía sin commit/push/deploy** — pendiente de confirmación del
-Desarrollador (ver pendiente #83 en `docs/PENDIENTES.md`).
+de consola. **Commiteado (`10987cc`), pusheado a `origin/main` y desplegado a Vercel**
+(`https://aurevia-panel.vercel.app`, deploy `dpl_17kDXZBx4A8f1Z3rHWARH4hKietK`), confirmado
+con `curl` real que la producción responde 200 (ver pendiente #83 en `docs/PENDIENTES.md`,
+ahora 🟢 Resuelto).
 
 **2026-07-24: Pendiente #63 — `metros_tolerancia_checkin` con pantalla propia en el Panel.**
 Nueva sección "Ausencia automática por falta de check-in GPS" en la pestaña Servicios de
