@@ -22,6 +22,10 @@ export const T = {
       nota_interna: 'Nota interna',
       nota_interna_placeholder: 'Solo la ve el equipo de la prestadora',
       seleccionar: 'Seleccionar',
+      reenviar_invitacion: 'Reenviar invitación',
+      reenviando_invitacion: 'Reenviando…',
+      invitacion_reenviada: 'Invitación reenviada.',
+      reenviar_invitacion_error: 'No se pudo reenviar la invitación.',
     },
     advertencias_legales: {
       titulo: 'Riesgo legal a tener en cuenta',
@@ -1041,6 +1045,10 @@ export const T = {
       nota_interna: 'Internal note',
       nota_interna_placeholder: 'Only visible to the provider team',
       seleccionar: 'Select',
+      reenviar_invitacion: 'Resend invitation',
+      reenviando_invitacion: 'Resending…',
+      invitacion_reenviada: 'Invitation resent.',
+      reenviar_invitacion_error: 'Could not resend the invitation.',
     },
     advertencias_legales: {
       titulo: 'Legal risk to consider',
@@ -2060,6 +2068,10 @@ export const T = {
       nota_interna: 'Nota interna',
       nota_interna_placeholder: 'Visível apenas para a equipe da prestadora',
       seleccionar: 'Selecionar',
+      reenviar_invitacion: 'Reenviar convite',
+      reenviando_invitacion: 'Reenviando…',
+      invitacion_reenviada: 'Convite reenviado.',
+      reenviar_invitacion_error: 'Não foi possível reenviar o convite.',
     },
     advertencias_legales: {
       titulo: 'Risco legal a considerar',

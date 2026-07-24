@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LocaleProvider } from './i18n/LocaleContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import ActivarCuenta from './pages/ActivarCuenta';
 import MisPacientes from './pages/MisPacientes';
 import PacienteDetalle from './pages/PacienteDetalle';
 import Reportes from './pages/Reportes';
@@ -28,6 +29,7 @@ function Rutas() {
         path="/login"
         element={cargando ? <div className="estado-cargando">Cargando…</div> : session ? <Navigate to="/pacientes" replace /> : <Login />}
       />
+      <Route path="/activar-cuenta" element={<ActivarCuenta />} />
       <Route
         path="/"
         element={

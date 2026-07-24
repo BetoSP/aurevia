@@ -44,6 +44,8 @@ export function FamiliaDetalle() {
   const [errorCirculo, setErrorCirculo] = useState(null);
   const [mostrarInvitarCirculo, setMostrarInvitarCirculo] = useState(false);
   const [quitandoUsuarioId, setQuitandoUsuarioId] = useState(null);
+  const [reenviandoUsuarioId, setReenviandoUsuarioId] = useState(null);
+  const [mensajeReenvio, setMensajeReenvio] = useState(null);
 
   const recargar = useCallback(async () => {
     setEstado('cargando');
@@ -119,6 +121,27 @@ export function FamiliaDetalle() {
     }
   }
 
+  async function reenviarInvitacion(usuarioId) {
+    setReenviandoUsuarioId(usuarioId);
+    setMensajeReenvio(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/cuentas/${usuarioId}/reenviar-activacion`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data.session?.access_token}` },
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(resultado.error);
+      }
+      setMensajeReenvio({ tipo: 'info', texto: t.comun.invitacion_reenviada });
+    } catch {
+      setMensajeReenvio({ tipo: 'error', texto: t.comun.reenviar_invitacion_error });
+    } finally {
+      setReenviandoUsuarioId(null);
+    }
+  }
+
   function setCampoContacto(campo, valor) {
     setFormContacto((f) => ({ ...f, [campo]: valor }));
     setContactoGuardado(false);
@@ -155,6 +178,7 @@ export function FamiliaDetalle() {
       <h2>{t.familias.contacto}</h2>
       {errorContacto && <Alert variant="error">{errorContacto}</Alert>}
       {contactoGuardado && <Alert variant="info">{t.comun.guardar} <span aria-hidden="true">✓</span></Alert>}
+      {mensajeReenvio && <Alert variant={mensajeReenvio.tipo}>{mensajeReenvio.texto}</Alert>}
       {formContacto && (
         <>
           <FormField label={t.familias.col_nombre} name="nombre_contacto" value={formContacto.nombre} onChange={(e) => setCampoContacto('nombre', e.target.value)} disabled={!puedeEditarFamilia} />
@@ -173,7 +197,12 @@ export function FamiliaDetalle() {
           </dl>
           <Button onClick={guardarContacto} disabled={guardandoContacto || !puedeEditarFamilia}>
             {guardandoContacto ? t.comun.guardando : t.comun.guardar}
-          </Button>
+          </Button>{' '}
+          {puedeEditarFamilia && (
+            <Button variant="secondary" onClick={() => reenviarInvitacion(familia.id)} disabled={reenviandoUsuarioId === familia.id}>
+              {reenviandoUsuarioId === familia.id ? t.comun.reenviando_invitacion : t.comun.reenviar_invitacion}
+            </Button>
+          )}
         </>
       )}
 
@@ -247,13 +276,22 @@ export function FamiliaDetalle() {
                 <td>{t.familias.circulo.rol_solo_lectura}</td>
                 <td>
                   {puedeEditarFamilia && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => quitarMiembroCirculo(m.usuario_id)}
-                      disabled={quitandoUsuarioId === m.usuario_id}
-                    >
-                      {t.familias.circulo.quitar}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => reenviarInvitacion(m.usuario_id)}
+                        disabled={reenviandoUsuarioId === m.usuario_id}
+                      >
+                        {reenviandoUsuarioId === m.usuario_id ? t.comun.reenviando_invitacion : t.comun.reenviar_invitacion}
+                      </Button>{' '}
+                      <Button
+                        variant="secondary"
+                        onClick={() => quitarMiembroCirculo(m.usuario_id)}
+                        disabled={quitandoUsuarioId === m.usuario_id}
+                      >
+                        {t.familias.circulo.quitar}
+                      </Button>
+                    </>
                   )}
                 </td>
               </tr>

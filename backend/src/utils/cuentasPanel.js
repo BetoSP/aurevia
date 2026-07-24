@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabase } from '../db/connection.js';
+import { invitarActivacionCuenta } from './activacionCuenta.js';
 
 const ETAPAS_INCORPORACION = [
   'postulacion',
@@ -9,15 +10,14 @@ const ETAPAS_INCORPORACION = [
   'capacitacion',
 ];
 
-// Mecanismo compartido: crea una cuenta real de Supabase Auth + su fila en `usuarios`,
-// sin enviar ningún email todavía. Para Familia/Asistente (panelCuentas.js) esto es correcto
-// tal cual: la PWA correspondiente (Etapa 3/4) no existe aún, así que no tiene sentido invitar
-// a alguien a loguearse en una app que no existe — el envío de invitación queda para cuando
-// esa PWA esté en producción (usar `admin.inviteUserByEmail` en ese momento). Para
-// Coordinador/Admin/Superadmin (panelUsuarios.js) el Panel SÍ existe hoy, así que
-// `passwordTemporal` se devuelve al caller para que quien lo crea pueda comunicarlo — no hay
-// otro canal de invitación implementado todavía.
-export async function crearCuentaConPerfil({ email, nombre, telefono, rol, zonas, prestadoraId }) {
+// Mecanismo compartido: crea una cuenta real de Supabase Auth + su fila en `usuarios`.
+// Para Coordinador/Admin/Superadmin (panelUsuarios.js) el Panel SÍ existe hoy y quien la crea
+// está también en el Panel, así que `passwordTemporal` se devuelve al caller para que la
+// comunique manualmente — ese flujo no cambia (fuera del alcance del pendiente #75). Para
+// Familia/Asistente/Círculo (panelCuentas.js), la persona nunca ve `passwordTemporal`: con
+// `enviarActivacion: true` se dispara automáticamente el email de "primera contraseña"
+// (activacionCuenta.js) con un link de token propio, en vez de depender de un canal manual.
+export async function crearCuentaConPerfil({ email, nombre, telefono, rol, zonas, prestadoraId, enviarActivacion = false }) {
   const passwordTemporal = crypto.randomBytes(24).toString('base64url');
 
   const { data: authData, error: errorAuth } = await supabase.auth.admin.createUser({
@@ -39,6 +39,16 @@ export async function crearCuentaConPerfil({ email, nombre, telefono, rol, zonas
   if (errorPerfil) {
     await supabase.auth.admin.deleteUser(userId);
     throw new Error(errorPerfil.message);
+  }
+
+  if (enviarActivacion) {
+    try {
+      await invitarActivacionCuenta({ usuarioId: userId, email, nombre, rol });
+    } catch (errorActivacion) {
+      // La cuenta ya quedó creada correctamente — un fallo al mandar el email (ej. SMTP
+      // caído en ese momento) no debe deshacer el alta, se recupera con "Reenviar invitación".
+      console.error('Error al enviar el email de activación:', errorActivacion.message);
+    }
   }
 
   return { userId, passwordTemporal };
@@ -88,7 +98,7 @@ export async function crearAsistenteDirecto({
   let asistenteId;
   try {
     ({ userId: asistenteId } = await crearCuentaConPerfil({
-      email, nombre, telefono, rol: 'asistente', zonas: zonasArray, prestadoraId,
+      email, nombre, telefono, rol: 'asistente', zonas: zonasArray, prestadoraId, enviarActivacion: true,
     }));
 
     const { error: errorAsistente } = await supabase.from('asistentes').insert({
@@ -152,7 +162,7 @@ export async function invitarMiembroCirculo({ email, nombre, telefono, familiaId
   let miembroId;
   try {
     ({ userId: miembroId } = await crearCuentaConPerfil({
-      email, nombre, telefono, rol: 'familia', prestadoraId,
+      email, nombre, telefono, rol: 'familia', prestadoraId, enviarActivacion: true,
     }));
 
     const { error: errorMiembro } = await supabase
@@ -223,7 +233,7 @@ export async function crearFamiliaDirecta({
     solicitudId = solicitud.id;
 
     ({ userId: familiaId } = await crearCuentaConPerfil({
-      email, nombre: nombreContacto, telefono, rol: 'familia', prestadoraId,
+      email, nombre: nombreContacto, telefono, rol: 'familia', prestadoraId, enviarActivacion: true,
     }));
 
     const { error: errorFamilia } = await supabase

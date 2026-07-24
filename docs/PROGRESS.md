@@ -21,6 +21,34 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
+**2026-07-23: Pendiente #75 — flujo de "primera contraseña" (activación de cuenta por
+email) para Familia/Asistente/Círculo de cuidado, construido y verificado en navegador
+real contra Prestadora Demo, pendiente de commit/push/deploy.** Mecanismo elegido por el
+Desarrollador: token propio (no `admin.inviteUserByEmail` de Supabase) + email por el SMTP
+ya existente (`backend/src/utils/email.js`). Nuevo: tabla `tokens_activacion_cuenta` (RLS
+sin policies — solo accesible con la service role key del backend), `backend/src/utils/
+activacionCuenta.js` (genera token de 7 días + email multi-idioma), endpoint público
+`POST /api/activar-cuenta` (`backend/src/routes/activarCuenta.js`), integrado en
+`crearCuentaConPerfil` (`backend/src/utils/cuentasPanel.js`) para las 3 rutas que crean
+Familia/Asistente/Círculo — si el envío del email falla, la cuenta ya creada no se revierte
+(queda recuperable con "Reenviar invitación"), endpoint y botón "Reenviar invitación" en el
+Panel (`panel/src/pages/familias/FamiliaDetalle.jsx`, `panel/src/pages/asistentes/
+PerfilTab.jsx`, solo visible para Admin), pantalla `ActivarCuenta.jsx` nueva en
+`pwa-familias` y `pwa-asistentes` (ruta pública `/activar-cuenta`, i18n ×3, 4 estados).
+**Verificado con Playwright contra Prestadora Demo real** (cuenta de prueba creada vía el
+código real de `crearCuentaConPerfil`, luego eliminada de Supabase Auth + `usuarios` +
+`tokens_activacion_cuenta` al cerrar la verificación): activación exitosa con contraseña
+nueva → pantalla de éxito con link a `/login`; token reutilizado, token inexistente y sin
+token en la URL → los 3 casos muestran correctamente el mensaje de link inválido/vencido.
+0 errores de consola nuevos. `npm run build`/`npm run lint` limpios en las 3 apps. **No se
+pudo verificar el envío real de email por SMTP en este entorno** (sandbox de desarrollo sin
+salida de red hacia Gmail SMTP, `ECONNREFUSED`) — el token se inserta en la base *antes* del
+envío del email dentro de `invitarActivacionCuenta`, así que ese fallo no impidió probar la
+pantalla de activación, pero la entrega real del email queda sin confirmar hasta producción.
+Falta: sumar `PWA_FAMILIAS_URL`/`PWA_ASISTENTES_URL` a las variables de entorno de Railway
+(backend de producción, hoy solo están en el `.env` local) antes del deploy, y commit + push
++ deploy explícito — pendiente de permiso del Desarrollador.
+
 **2026-07-23: Verificación retroactiva de las Fases 1 y 2 del plan de rediseño de frontend
 (`C:\Users\Usuario\.claude\plans\distributed-scribbling-wirth.md`) — ya estaban completas,
 sin haber quedado registradas como tales en este documento.** El Desarrollador pidió

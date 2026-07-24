@@ -9,6 +9,7 @@ import {
   invitarMiembroCirculo,
   revocarMiembroCirculo,
 } from '../utils/cuentasPanel.js';
+import { reenviarActivacionCuenta } from '../utils/activacionCuenta.js';
 import { tienePermiso, ACCIONES_PERMISOS } from '../utils/permisos.js';
 
 export const panelCuentasRouter = Router();
@@ -87,6 +88,7 @@ panelCuentasRouter.post('/familia', requiereRolPanel, requiereAdmin, async (req,
       telefono: solicitud.telefono,
       rol: 'familia',
       prestadoraId,
+      enviarActivacion: true,
     }));
 
     const { error: errorFamilia } = await supabase
@@ -186,6 +188,7 @@ panelCuentasRouter.post('/asistente', requiereRolPanel, requiereAdmin, async (re
       rol: 'asistente',
       zonas: postulacion.zonas.split(',').map((z) => z.trim()).filter(Boolean),
       prestadoraId,
+      enviarActivacion: true,
     }));
 
     const { error: errorAsistente } = await supabase.from('asistentes').insert({
@@ -324,5 +327,33 @@ panelCuentasRouter.delete('/familia/:familiaId/circulo/:usuarioId', requiereRolP
     res.json({ ok: true });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Reenviar el email de activación (pendiente #75) — cubre el token vencido (7 días) o
+// simplemente extraviado. Solo para Familia/Asistente/Círculo (mismo alcance que el envío
+// automático de crearCuentaConPerfil); Coordinador/Admin/Superadmin siguen con el flujo
+// manual de panelUsuarios.js y no tienen esta ruta disponible.
+panelCuentasRouter.post('/:usuarioId/reenviar-activacion', requiereRolPanel, requiereAdmin, async (req, res) => {
+  const prestadoraId = req.usuarioPanel.prestadoraId;
+
+  let queryUsuario = supabase.from('usuarios').select('id, rol, prestadora_id').eq('id', req.params.usuarioId);
+  if (req.usuarioPanel.rol !== 'superadmin') {
+    queryUsuario = queryUsuario.eq('prestadora_id', prestadoraId);
+  }
+  const { data: usuario } = await queryUsuario.maybeSingle();
+
+  if (!usuario) {
+    return res.status(404).json({ error: 'Cuenta no encontrada' });
+  }
+  if (!['familia', 'asistente'].includes(usuario.rol)) {
+    return res.status(400).json({ error: 'Esta cuenta no usa el flujo de activación por email' });
+  }
+
+  try {
+    await reenviarActivacionCuenta(usuario.id);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });

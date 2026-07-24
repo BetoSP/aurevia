@@ -17,6 +17,7 @@ import { panelInformesObraSocialRouter } from './routes/panelInformesObraSocial.
 import { panelVitalesAutorizacionRouter } from './routes/panelVitalesAutorizacion.js';
 import { panelConfiguracionPlataformaRouter } from './routes/panelConfiguracionPlataforma.js';
 import { configuracionPublicaRouter } from './routes/configuracionPublica.js';
+import { activarCuentaRouter } from './routes/activarCuenta.js';
 import { revisarVencimientos } from './utils/vencimientos.js';
 import { revisarAusenciasAutomaticas } from './utils/ausenciaAutomatica.js';
 import { revisarNotificacionesCoordinador } from './utils/revisarNotificacionesCoordinador.js';
@@ -52,6 +53,7 @@ app.use('/api/panel/informes-obra-social', panelInformesObraSocialRouter);
 app.use('/api/panel/vitales-autorizacion', panelVitalesAutorizacionRouter);
 app.use('/api/panel/configuracion-plataforma', panelConfiguracionPlataformaRouter);
 app.use('/api/configuracion-publica', configuracionPublicaRouter);
+app.use('/api/activar-cuenta', activarCuentaRouter);
 app.use('/api/whatsapp-webhook', whatsappWebhookRouter);
 app.use('/api/app-asistentes', appAsistentesRouter);
 app.use('/api/app-familias', appFamiliasRouter);

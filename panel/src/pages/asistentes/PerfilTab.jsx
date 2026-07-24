@@ -11,6 +11,8 @@ import { Alert } from '../../components/ui/Alert';
 import { EstadoLista } from '../../components/layout/EstadoLista';
 import { generarCertificadoTrabajo, generarCertificadoRemuneracionesServicios, descargarPDF } from '../../lib/generarDocumentoCese';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export function PerfilTab({ asistente, onActualizado }) {
   const { t } = useLocale();
   const { usuario } = useAuth();
@@ -35,6 +37,8 @@ export function PerfilTab({ asistente, onActualizado }) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [guardado, setGuardado] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [mensajeReenvio, setMensajeReenvio] = useState(null);
 
   function set(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -68,6 +72,27 @@ export function PerfilTab({ asistente, onActualizado }) {
     }
     setGuardado(true);
     onActualizado();
+  }
+
+  async function reenviarInvitacion() {
+    setReenviando(true);
+    setMensajeReenvio(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const respuesta = await fetch(`${API_URL}/api/panel/cuentas/${asistente.id}/reenviar-activacion`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data.session?.access_token}` },
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(resultado.error);
+      }
+      setMensajeReenvio({ tipo: 'info', texto: t.comun.invitacion_reenviada });
+    } catch {
+      setMensajeReenvio({ tipo: 'error', texto: t.comun.reenviar_invitacion_error });
+    } finally {
+      setReenviando(false);
+    }
   }
 
   function descargarCertificadoTrabajo() {
@@ -134,6 +159,11 @@ export function PerfilTab({ asistente, onActualizado }) {
 
       {esAdmin && (
         <>
+          {mensajeReenvio && <Alert variant={mensajeReenvio.tipo}>{mensajeReenvio.texto}</Alert>}
+          <Button variant="secondary" onClick={reenviarInvitacion} disabled={reenviando}>
+            {reenviando ? t.comun.reenviando_invitacion : t.comun.reenviar_invitacion}
+          </Button>
+
           <h2>{t.asistentes.documentos.titulo}</h2>
           <Button variant="secondary" onClick={descargarCertificadoTrabajo}>
             {t.asistentes.documentos.certificado_trabajo}

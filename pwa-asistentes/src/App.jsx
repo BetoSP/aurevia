@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LocaleProvider } from './i18n/LocaleContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import ActivarCuenta from './pages/ActivarCuenta';
 import MisGuardias from './pages/MisGuardias';
 import GuardiaActiva from './pages/GuardiaActiva';
 import ReporteDiario from './pages/ReporteDiario';
@@ -24,6 +25,7 @@ function Rutas() {
         path="/login"
         element={cargando ? <div className="estado-cargando">Cargando…</div> : session ? <Navigate to="/guardias" replace /> : <Login />}
       />
+      <Route path="/activar-cuenta" element={<ActivarCuenta />} />
       <Route
         path="/"
         element={
