@@ -33,7 +33,12 @@ generados desde el logo real de Aurevia (`favicon.svg`, el mismo del `panel`) co
 png`/`icon-512.png` (logo centrado sobre fondo blanco) e `icon-maskable-192.png`/`icon-
 maskable-512.png` (zona segura del 40% para la máscara de Android/iOS). Agregados a
 `public/` de ambas apps y referenciados en `vite.config.js`; `npm run build` sin errores en
-las dos, `dist/manifest.webmanifest` confirmado con los 4 íconos.
+las dos, `dist/manifest.webmanifest` confirmado con los 4 íconos. **Commiteado (`0025cda`),
+pusheado a `origin/main`, y desplegado a Vercel** (`pwa-familias` `dpl_3Q3TyUHkXMVZsHH7YaWTX7HZd1fW`,
+`pwa-asistentes` `dpl_FEdNkXpfRB6KFFjWqjzeEJJC2KtD`, los 2 estado `Ready`) — confirmado con
+`curl` real contra `https://pwa-familias.vercel.app/manifest.webmanifest` y
+`https://pwa-asistentes.vercel.app/manifest.webmanifest` que ya sirven los 4 íconos nuevos
+(200 real también para `/icon-192.png` en ambos dominios).
 
 **2026-07-24: Pendiente #75 — flujo de "primera contraseña" (activación de cuenta por
 email) para Familia/Asistente/Círculo de cuidado, construido, desplegado a producción y
