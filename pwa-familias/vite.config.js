@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'],
       // injectManifest (no generateSW): el service worker necesita manejar el evento 'push'
       // (notificaciones push a Asistentes) además del precache del shell de la app.
       strategies: 'injectManifest',
@@ -21,9 +21,12 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
-        // TODO (ver docs/PENDIENTES.md): íconos PNG 192/512 reales para instalación en
-        // pantalla de inicio — por ahora solo el favicon SVG heredado del Panel.
-        icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }],
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
       },
       injectManifest: {
         // Nunca cachear llamadas a la API (datos de guardias/reportes cambian todo el

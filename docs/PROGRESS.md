@@ -21,6 +21,20 @@ Convención: 🔴 No iniciado · 🟡 En progreso · 🟢 Completo y en producci
 
 ## Última tarea completada
 
+**2026-07-24: Pendientes #65, #69/#64 y #79.** (1) Confirmada la falta real de
+`ANTHROPIC_API_KEY` en Railway (producción) — no era solo una presunción, `railway
+variables` no la tenía; el Desarrollador creó una API Key nueva en console.anthropic.com y
+se cargó vía `railway variables --set`, redeploy automático confirmado con `GET /health`
+real. Se registró como pendiente nuevo #79 (Admin_plataforma no registra consumo de IA por
+Prestadora para poder facturarlo — a definir modelo de costeo con el Desarrollador). (2)
+Íconos PNG reales para "Agregar a pantalla de inicio" en `pwa-familias` y `pwa-asistentes`:
+generados desde el logo real de Aurevia (`favicon.svg`, el mismo del `panel`) con `sharp`
+(instalado temporalmente en el scratchpad, no como dependencia del proyecto) — `icon-192.
+png`/`icon-512.png` (logo centrado sobre fondo blanco) e `icon-maskable-192.png`/`icon-
+maskable-512.png` (zona segura del 40% para la máscara de Android/iOS). Agregados a
+`public/` de ambas apps y referenciados en `vite.config.js`; `npm run build` sin errores en
+las dos, `dist/manifest.webmanifest` confirmado con los 4 íconos.
+
 **2026-07-24: Pendiente #75 — flujo de "primera contraseña" (activación de cuenta por
 email) para Familia/Asistente/Círculo de cuidado, construido, desplegado a producción y
 verificado.** Mecanismo elegido por el Desarrollador: token propio (no
